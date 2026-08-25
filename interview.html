@@ -930,6 +930,13 @@
         { type:'수정', text:'대학원 정보를 "대학원1"/"대학원2" 열로 각각 인식해, 석사·박사를 실제 학위구분 값에 맞게 따로 표시하도록 개선' },
       ],
     },
+    {
+      label: '업데이트 16 · 세부 표시 다듬기',
+      items: [
+        { type:'수정', text:'최종 순위 표에서 이름/수험번호가 세로로 한 글자씩 쪼개지던 문제 수정' },
+        { type:'수정', text:'엑셀 다운로드 시 조직/직무적합도의 등급 문자와 점수를 각각 별도의 열로 분리해서 표시' },
+      ],
+    },
   ];
  
   // Wrapper around the real render so that whatever text input the user is actively
@@ -1371,8 +1378,10 @@
     const rows = complete.map(r => {
       const row = { '순위': r.rank, ...baseFields(r.c) };
       labels.forEach((label, i)=>{
-        row[`${label} 조직적합도`] = r.cultures[i]!=null ? r.cultures[i] : '';
-        row[`${label} 직무적합도`] = r.jobs[i]!=null ? r.jobs[i] : '';
+        row[`${label} 조직적합도 등급`] = r.cultureGrades[i]!=null ? r.cultureGrades[i] : '';
+        row[`${label} 조직적합도 점수`] = r.cultures[i]!=null ? r.cultures[i] : '';
+        row[`${label} 직무적합도 등급`] = r.jobGrades[i]!=null ? r.jobGrades[i] : '';
+        row[`${label} 직무적합도 점수`] = r.jobs[i]!=null ? r.jobs[i] : '';
         row[`${label} 소계`] = r.per[i]!=null ? r.per[i] : '';
       });
       row[scoreTotalKey] = r.total;
@@ -1381,8 +1390,10 @@
     incomplete.forEach(r=>{
       const row = { '순위': '-', ...baseFields(r.c) };
       labels.forEach(label=>{
-        row[`${label} 조직적합도`] = '';
-        row[`${label} 직무적합도`] = '';
+        row[`${label} 조직적합도 등급`] = '';
+        row[`${label} 조직적합도 점수`] = '';
+        row[`${label} 직무적합도 등급`] = '';
+        row[`${label} 직무적합도 점수`] = '';
         row[`${label} 소계`] = '';
       });
       row[scoreTotalKey] = `평가 진행 중 (${r.doneCount}/${letters.length}명 완료)`;
