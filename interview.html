@@ -433,6 +433,12 @@
   function activeInterviewerLetters(roundId){
     return INTERVIEWERS_ALL.slice(0, getInterviewerCount(roundId));
   }
+  // 채점 기준: 'dual'(기본) = 직무적합도+조직적합도 각각 평가, 'single' = 등급 하나로만 종합평가.
+  // 예전에 만든 회차는 이 필드가 없으므로 기본값 'dual'로 처리(하위 호환).
+  function getScoringMode(roundId){
+    const r = state.rounds.find(x => x.id === roundId);
+    return (r && r.scoringMode === 'single') ? 'single' : 'dual';
+  }
  
   // ---------- storage helpers ----------
   // Backed by a Google Apps Script web app that reads/writes a Google Sheet, so it works
@@ -580,8 +586,16 @@
       if(!isNaN(parsed) && parsed >= 2 && parsed <= 5) interviewerCount = parsed;
       else if(countStr.trim() !== '') alert('2~5 사이의 숫자가 아니어서 기본값 3명으로 설정했습니다.');
     }
+    let scoringMode = 'dual';
+    const modeStr = prompt(
+      '이번 회차의 채점 기준을 선택해주세요.\n\n' +
+      '1 = 직무적합도 + 조직적합도를 각각 평가 (기본)\n' +
+      '2 = 등급 하나로만 종합평가 (예: 기자직처럼 단일 기준)',
+      '1'
+    );
+    if(modeStr !== null && modeStr.trim() === '2') scoringMode = 'single';
     const id = 'r' + Date.now();
-    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount };
+    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount, scoringMode };
     state.rounds = [...state.rounds, round];
     state.activeRoundId = id;
     state.viewRoundId = id;
@@ -862,7 +876,13 @@
   // ---------- calc ----------
   function ownAvg(letter, candidateId){
     const s = state.scores[letter][candidateId];
-    if(!s || !s.job || !s.culture) return null;
+    if(!s) return null;
+    if(getScoringMode(currentRoundId()) === 'single'){
+      // 단일평가 모드: 등급 하나(job 필드에 저장)만으로 판단, 평균 낼 필요 없음
+      if(!s.job) return null;
+      return GRADE_MAP[s.job];
+    }
+    if(!s.job || !s.culture) return null;
     return (GRADE_MAP[s.job] + GRADE_MAP[s.culture]) / 2;
   }
  
@@ -1186,6 +1206,13 @@
         { type:'수정', text:'재직기간과 "(N년 M개월)" 표시가 한 줄에 붙어있어 괄호 중간에서 어색하게 줄바꿈되던 문제 수정 — 재직기간/개월수를 별도 줄로 분리하고, 개월수 표시는 절대 중간에서 쪼개지지 않도록 처리' },
       ],
     },
+    {
+      label: '업데이트 33 · 회차별 채점 기준 선택',
+      items: [
+        { type:'추가', text:'면접관 수처럼, 새 회차를 만들 때 채점 기준도 선택 가능하도록 추가 — "직무적합도+조직적합도 각각 평가"(기본) 또는 "등급 하나로만 종합평가"(예: 기자직) 중 선택' },
+        { type:'수정', text:'단일평가 모드에서는 채점표에 등급 입력칸이 하나만 나오고, 최종 순위/엑셀 다운로드도 조직·직무 구분 없이 "평가 등급/점수"로 단순하게 표시됨' },
+      ],
+    },
   ];
  
   // Wrapper around the real render so that whatever text input the user is actively
@@ -1422,7 +1449,8 @@
       sortedRounds.forEach(r=>{
         const opt = document.createElement('option');
         opt.value = r.id;
-        opt.textContent = r.name + ` · 면접관 ${r.interviewerCount||3}명` + (r.id===activeId ? ' (진행중)' : '');
+        const modeTag = r.scoringMode === 'single' ? ' · 단일평가' : '';
+        opt.textContent = r.name + ` · 면접관 ${r.interviewerCount||3}명${modeTag}` + (r.id===activeId ? ' (진행중)' : '');
         if(r.id === viewId) opt.selected = true;
         select.appendChild(opt);
       });
@@ -1620,6 +1648,7 @@
     const labels = letters.map(l => interviewerLabel(l));
     const maxScore = letters.length * 100;
     const scoreTotalKey = `종합점수(${maxScore}점)`;
+    const scoringMode = getScoringMode(currentRoundId());
  
     function baseFields(c){
       return {
@@ -1637,11 +1666,16 @@
     const rows = complete.map(r => {
       const row = { '순위': r.rank, ...baseFields(r.c) };
       labels.forEach((label, i)=>{
-        row[`${label} 조직적합도 등급`] = r.cultureGrades[i]!=null ? r.cultureGrades[i] : '';
-        row[`${label} 조직적합도 점수`] = r.cultures[i]!=null ? r.cultures[i] : '';
-        row[`${label} 직무적합도 등급`] = r.jobGrades[i]!=null ? r.jobGrades[i] : '';
-        row[`${label} 직무적합도 점수`] = r.jobs[i]!=null ? r.jobs[i] : '';
-        row[`${label} 소계`] = r.per[i]!=null ? r.per[i] : '';
+        if(scoringMode === 'single'){
+          row[`${label} 평가 등급`] = r.jobGrades[i]!=null ? r.jobGrades[i] : '';
+          row[`${label} 평가 점수`] = r.jobs[i]!=null ? r.jobs[i] : '';
+        } else {
+          row[`${label} 조직적합도 등급`] = r.cultureGrades[i]!=null ? r.cultureGrades[i] : '';
+          row[`${label} 조직적합도 점수`] = r.cultures[i]!=null ? r.cultures[i] : '';
+          row[`${label} 직무적합도 등급`] = r.jobGrades[i]!=null ? r.jobGrades[i] : '';
+          row[`${label} 직무적합도 점수`] = r.jobs[i]!=null ? r.jobs[i] : '';
+          row[`${label} 소계`] = r.per[i]!=null ? r.per[i] : '';
+        }
         row[`${label} 메모`] = r.memos[i] || '';
       });
       row[scoreTotalKey] = r.total;
@@ -1650,11 +1684,16 @@
     incomplete.forEach(r=>{
       const row = { '순위': '-', ...baseFields(r.c) };
       labels.forEach(label=>{
-        row[`${label} 조직적합도 등급`] = '';
-        row[`${label} 조직적합도 점수`] = '';
-        row[`${label} 직무적합도 등급`] = '';
-        row[`${label} 직무적합도 점수`] = '';
-        row[`${label} 소계`] = '';
+        if(scoringMode === 'single'){
+          row[`${label} 평가 등급`] = '';
+          row[`${label} 평가 점수`] = '';
+        } else {
+          row[`${label} 조직적합도 등급`] = '';
+          row[`${label} 조직적합도 점수`] = '';
+          row[`${label} 직무적합도 등급`] = '';
+          row[`${label} 직무적합도 점수`] = '';
+          row[`${label} 소계`] = '';
+        }
         row[`${label} 메모`] = '';
       });
       row[scoreTotalKey] = `평가 진행 중 (${r.doneCount}/${letters.length}명 완료)`;
@@ -1672,13 +1711,16 @@
     XLSX.writeFile(wb, `${safeName}_최종순위.xlsx`);
   }
  
-  function interviewerScoreBlock(label, culture, cultureGrade, job, jobGrade, subtotal, memo){
+  function interviewerScoreBlock(label, culture, cultureGrade, job, jobGrade, subtotal, memo, mode){
     const memoHtml = memo ? `<div class="iv-memo">"${escapeHtml(memo)}"</div>` : '';
+    const scoreLineHtml = mode === 'single'
+      ? `<span title="종합평가">평가 ${jobGrade!=null ? escapeHtml(jobGrade)+'('+job+')' : '-'}</span>`
+      : `<span title="조직적합도">조직 ${cultureGrade!=null ? escapeHtml(cultureGrade)+'('+culture+')' : '-'}</span>
+         <span title="직무적합도">직무 ${jobGrade!=null ? escapeHtml(jobGrade)+'('+job+')' : '-'}</span>`;
     return `<div class="iv-score-block">
       <div class="cell-label">${escapeAttr(label)}</div>
       <div class="score-cell-grid">
-        <span title="조직적합도">조직 ${cultureGrade!=null ? escapeHtml(cultureGrade)+'('+culture+')' : '-'}</span>
-        <span title="직무적합도">직무 ${jobGrade!=null ? escapeHtml(jobGrade)+'('+job+')' : '-'}</span>
+        ${scoreLineHtml}
       </div>
       <span class="avg-pill" style="margin-top:3px;display:inline-block;">${subtotal!=null ? fmt(subtotal)+'점' : '평가중'}</span>
       ${memoHtml}
@@ -1734,6 +1776,7 @@
     const letters = activeInterviewerLetters(currentRoundId());
     const labels = letters.map(l => interviewerLabel(l));
     const maxScore = letters.length * 100;
+    const scoringMode = getScoringMode(currentRoundId());
  
     if(!complete.length && !incomplete.length){
       return el(`<div class="empty-state">등록된 지원자가 없습니다.</div>`);
@@ -1743,7 +1786,7 @@
     complete.forEach((r, i)=>{
       builders.push(()=>{
         const scoreBlocks = letters.map((l, idx) =>
-          interviewerScoreBlock(labels[idx], r.cultures[idx], r.cultureGrades[idx], r.jobs[idx], r.jobGrades[idx], r.per[idx], r.memos[idx])
+          interviewerScoreBlock(labels[idx], r.cultures[idx], r.cultureGrades[idx], r.jobs[idx], r.jobGrades[idx], r.per[idx], r.memos[idx], scoringMode)
         ).join('');
         return el(`<div class="candidate">
           <div class="cand-main">
@@ -1822,12 +1865,16 @@
     wrap.appendChild(nameCard);
  
     const myName = state.interviewerNames[letter];
+    const scoreCardMode = getScoringMode(state.activeRoundId);
+    const scoreCardSub = scoreCardMode === 'single'
+      ? '등급을 입력하면 자동으로 점수로 환산됩니다 (A=100, B+=95, B=90, C=80, D=70, E=0). 이번 회차는 종합평가 하나로만 채점합니다.'
+      : '직무적합도 · 조직적합도를 각각 등급으로 입력하면 자동으로 환산됩니다 (A=100, B+=95, B=90, C=80, D=70, E=0)';
     const scoreCard = el(`
       <div class="card card-glass-host" style="margin-top:16px;">
         <div class="card-head">
           <div>
             <p class="card-title">지원자 평가 (면접관 ${letter}${myName ? ' · '+escapeHtml(myName) : ''})</p>
-            <p class="card-sub">직무적합도 · 조직적합도를 각각 등급으로 입력하면 자동으로 환산됩니다 (A=100, B+=95, B=90, C=80, D=70, E=0)</p>
+            <p class="card-sub">${scoreCardSub}</p>
           </div>
           <input type="text" class="filter-input" id="filterInput" placeholder="이름 또는 수험번호로 검색" value="${escapeAttr(state.filter)}" />
         </div>
@@ -1919,6 +1966,7 @@
       return el(`<div class="empty-state">검색 결과가 없습니다.</div>`);
     }
     const rankMap = computeOwnRankMap(letter);
+    const mode = getScoringMode(currentRoundId());
     const wrap = document.createElement('div');
     const pageKey = `score_${letter}`;
     const shownCount = getVisibleCount(pageKey, list.length);
@@ -1927,6 +1975,19 @@
       const avg = ownAvg(letter, c.id);
       const rinfo = rankMap[c.id];
       const rankSideHtmlStr = avg===null ? `<div class="rank-side-empty">미평가</div>` : rankSideHtml(rinfo.rank, rinfo.total);
+      const scoreFieldsHtml = mode === 'single'
+        ? `<div class="score-field">
+             <label>종합평가</label>
+             <div class="job-select-slot"></div>
+           </div>`
+        : `<div class="score-field">
+             <label>직무적합도</label>
+             <div class="job-select-slot"></div>
+           </div>
+           <div class="score-field">
+             <label>조직적합도</label>
+             <div class="culture-select-slot"></div>
+           </div>`;
       const card = el(`
         <div class="candidate">
           <div class="cand-main">
@@ -1946,14 +2007,7 @@
             </div>
             <div class="divider"></div>
             <div class="score-zone">
-              <div class="score-field">
-                <label>직무적합도</label>
-                <div class="job-select-slot"></div>
-              </div>
-              <div class="score-field">
-                <label>조직적합도</label>
-                <div class="culture-select-slot"></div>
-              </div>
+              ${scoreFieldsHtml}
               <div class="memo-field">
                 <label>메모</label>
                 <div class="memo-slot"></div>
@@ -1966,7 +2020,10 @@
           <div class="cand-rank-side">${rankSideHtmlStr}</div>
         </div>`);
       card.querySelector('.job-select-slot').appendChild(buildGradeSelect(s.job, (grade)=> setScore(letter, c.id, 'job', grade)));
-      card.querySelector('.culture-select-slot').appendChild(buildGradeSelect(s.culture, (grade)=> setScore(letter, c.id, 'culture', grade)));
+      const cultureSlot = card.querySelector('.culture-select-slot');
+      if(cultureSlot){
+        cultureSlot.appendChild(buildGradeSelect(s.culture, (grade)=> setScore(letter, c.id, 'culture', grade)));
+      }
       const memoInput = el(`<textarea id="memoInput_${letter}_${c.id}" class="memo-input" placeholder="나만 보는 메모 (예: 인상, 궁금한 점)" rows="1">${escapeHtml(s.memo||'')}</textarea>`);
       memoInput.addEventListener('change', ()=> setScore(letter, c.id, 'memo', memoInput.value));
       card.querySelector('.memo-slot').appendChild(memoInput);
@@ -2126,4 +2183,3 @@
 </script>
 </body>
 </html>
- 
