@@ -263,7 +263,7 @@
     text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;
   }
   .career-chip .co{font-size:12px;font-weight:700;margin-bottom:2px;line-height:1.3;overflow-wrap:anywhere;}
-  .career-chip .meta{font-size:10.5px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere;}
+  .career-chip .meta{font-size:10.5px;color:var(--muted);line-height:1.5;}
  
   .candidate .divider{height:1px;background:rgba(255,255,255,.7);}
  
@@ -1178,6 +1178,12 @@
       items: [
         { type:'수정', text:'경력 카드 줄바꿈 방식을 flexbox에서 CSS Grid(auto-fill)로 교체 — 사파리/아이패드에서 줄바꿈이 되지 않고 가로 스크롤이 남아있던 문제 수정' },
         { type:'수정', text:'긴 회사명이 칸 밖으로 넘치지 않도록 텍스트 줄바꿈 보강' },
+      ],
+    },
+    {
+      label: '업데이트 32 · 근무 개월수 줄바꿈 수정',
+      items: [
+        { type:'수정', text:'재직기간과 "(N년 M개월)" 표시가 한 줄에 붙어있어 괄호 중간에서 어색하게 줄바꿈되던 문제 수정 — 재직기간/개월수를 별도 줄로 분리하고, 개월수 표시는 절대 중간에서 쪼개지지 않도록 처리' },
       ],
     },
   ];
@@ -2103,13 +2109,12 @@
       if(!isBlankValue(entry.type)) metaParts.push(escapeHtml(entry.type));
       const metaLine1 = metaParts.join(' · ');
       const durationLabel = calcDurationLabel(period);
-      const metaLine2 = !isBlankValue(period)
-        ? `${escapeHtml(period)}${durationLabel ? ` <span style="color:var(--teal);font-weight:700;">(${durationLabel})</span>` : ''}`
-        : '';
+      const periodLine = !isBlankValue(period) ? escapeHtml(period) : '';
+      const durationLine = durationLabel ? `<span style="color:var(--teal);font-weight:700;white-space:nowrap;">(${durationLabel})</span>` : '';
       return `<div class="career-chip">
         <div class="chip-ordinal">경력${i+1}</div>
         <div class="co">${!isBlankValue(name) ? escapeHtml(name) : '-'}</div>
-        <div class="meta">${[metaLine1, metaLine2].filter(Boolean).join('<br>')}</div>
+        <div class="meta">${[metaLine1, periodLine, durationLine].filter(Boolean).join('<br>')}</div>
       </div>`;
     }).join('');
   }
@@ -2121,3 +2126,4 @@
 </script>
 </body>
 </html>
+ 
