@@ -43,7 +43,7 @@
     -webkit-font-smoothing:antialiased;
   }
   #app{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
- 
+
   .topbar{
     display:flex;justify-content:space-between;align-items:flex-end;
     margin-bottom:22px;flex-wrap:wrap;gap:14px;
@@ -61,7 +61,7 @@
   }
   .role-tab.active{background:var(--ink);color:#fff;}
   .role-tab:hover:not(.active){background:var(--bg);color:var(--ink);}
- 
+
   .card{
     background:var(--card);border:1.5px solid #D8DDE6;border-radius:16px;
     padding:22px 22px;margin-bottom:20px;
@@ -73,7 +73,7 @@
   .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
   .card-title{font-size:15px;font-weight:700;margin:0;}
   .card-sub{font-size:12.5px;color:var(--muted);margin-top:3px;}
- 
+
   .btn{
     font-family:var(--sans);font-weight:700;font-size:13px;border-radius:9px;
     padding:9px 16px;border:1px solid var(--line);background:var(--card);color:var(--ink);
@@ -87,7 +87,7 @@
   .btn-danger{background:transparent;color:var(--danger);border-color:var(--danger);}
   .btn-danger:hover{background:#FBEDEA;}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
- 
+
   .upload-zone{
     border:1.5px dashed var(--line);border-radius:12px;padding:28px;text-align:center;
     background:var(--bg);cursor:pointer;transition:all .15s;
@@ -97,7 +97,7 @@
   .upload-zone .icon{font-size:26px;margin-bottom:6px;}
   .upload-zone .txt{font-weight:700;font-size:13.5px;}
   .upload-zone .sub{font-size:12px;color:var(--muted);margin-top:4px;}
- 
+
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{
     text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
@@ -109,45 +109,45 @@
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--line);}
   .table-wrap table{margin:0;}
   .table-wrap th:first-child, .table-wrap td:first-child{padding-left:14px;}
- 
+
   .name-cell{font-weight:700;}
   .sub-cell{color:var(--muted);font-size:12px;white-space:normal;}
- 
+
   .cell-label{
     font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--muted);
     text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;
   }
   .score-cell-grid{display:flex;flex-wrap:wrap;gap:4px 8px;font-family:var(--mono);font-size:11.5px;color:var(--slate);margin-bottom:2px;}
- 
+
   select.grade-select{
     font-family:var(--mono);font-weight:600;font-size:13px;
     border:1px solid var(--line);border-radius:7px;padding:5px 6px;
     background:var(--bg);color:var(--ink);cursor:pointer;
   }
   select.grade-select:focus{outline:2px solid var(--teal);outline-offset:1px;}
- 
+
   .avg-pill{
     font-family:var(--mono);font-weight:600;font-size:13px;
     background:var(--teal-soft);color:var(--teal);padding:4px 9px;border-radius:7px;
     display:inline-block;
   }
   .avg-pill.empty{background:var(--bg);color:var(--muted);}
- 
- 
+
+
   .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
   .status-dot.done{background:var(--teal);}
   .status-dot.pending{background:var(--line);}
- 
+
   .banner{
     display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;
     font-size:12.5px;line-height:1.5;
   }
   .banner.info{background:var(--teal-soft);color:#1F5A4C;border:1px solid rgba(47,125,107,.22);}
   .banner.warn{background:var(--amber-soft);color:#8A5316;border:1px solid rgba(201,122,43,.22);}
- 
+
   .empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
   .empty-state .big{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
- 
+
   .hero-panel{
     position:relative;border-radius:20px;overflow:hidden;
     min-height:440px;display:flex;align-items:center;margin-bottom:20px;
@@ -177,7 +177,7 @@
   .hero-cta{
     font-size:13px;color:rgba(255,255,255,.92);font-weight:600;margin:0;
   }
- 
+
   .filter-input{
     font-family:var(--sans);font-size:13px;padding:8px 12px;border-radius:9px;
     border:1px solid var(--line);background:var(--bg);width:200px;
@@ -190,7 +190,7 @@
   }
   .memo-input:focus{outline:2px solid var(--teal);outline-offset:1px;}
   .memo-input::placeholder{color:var(--muted);}
- 
+
   /* ---- 지원자 카드 (표 대신 카드 단위로 지원자를 훑어보는 UI) ----
      지원자가 많을 때 카드가 수십~수백 개 한꺼번에 그려지므로, backdrop-filter 블러 강도를
      가볍게 낮춰서(18px→8px, saturate 제거) 렌더링 부담을 줄였다. 유리 느낌은 배경 불투명도를
@@ -220,7 +220,7 @@
     border:1px solid var(--line);border-radius:5px;padding:1px 6px;
   }
   .cand-vitals{font-size:12px;color:var(--muted);margin-top:4px;}
- 
+
   /* 카드 우측에 통째로 붙는 등수 사이드바 — 카드 세로 전체 길이에 걸쳐 중앙 정렬,
      절대 줄바꿈되지 않도록 함(white-space:nowrap). */
   .cand-rank-side{
@@ -236,7 +236,7 @@
   .rank-side-empty{
     font-family:var(--sans);font-weight:700;font-size:13px;color:var(--muted);white-space:nowrap;
   }
- 
+
   .cand-body{padding:0 20px 16px;}
   .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
   .tag{
@@ -245,7 +245,7 @@
     color:var(--slate);
   }
   .tag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
- 
+
   /* 경력이 많아서 한 줄에 다 안 들어가면, 가로로 스크롤하게 하는 대신 다음 줄로 자연스럽게
      넘어가도록 함(좌우 스크롤 최소화). */
   /* 경력이 많으면 가로 스크롤 대신 다음 줄로 자동으로 넘어가야 하는데, flexbox의
@@ -264,9 +264,9 @@
   }
   .career-chip .co{font-size:12px;font-weight:700;margin-bottom:2px;line-height:1.3;overflow-wrap:anywhere;}
   .career-chip .meta{font-size:10.5px;color:var(--muted);line-height:1.5;}
- 
+
   .candidate .divider{height:1px;background:rgba(255,255,255,.7);}
- 
+
   .score-zone{
     background:rgba(255,255,255,.25);
     padding:16px 20px 18px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;
@@ -286,7 +286,7 @@
   .score-result .avg{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--ink);}
   .score-result .avg.empty{color:var(--muted);font-size:16px;}
   .score-result .rank{font-size:11.5px;color:var(--muted);}
- 
+
   .iv-score-block{
     background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);border-radius:10px;
     padding:10px 12px;min-width:150px;
@@ -300,7 +300,7 @@
   .iv-memo{
     margin-top:5px;font-size:11px;color:var(--slate);font-style:italic;line-height:1.4;
   }
- 
+
   .own-rank-toggle-wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:380px;margin-right:48px;}
   .own-rank-toggle-btn{
     font-family:var(--sans);font-weight:700;font-size:13px;color:#fff;
@@ -309,7 +309,7 @@
   }
   .own-rank-toggle-btn.expanded{background:var(--amber);box-shadow:0 4px 12px rgba(201,122,43,.35);}
   .own-rank-toggle-hint{font-size:11.5px;color:var(--slate);line-height:1.45;font-style:italic;}
- 
+
   .grade-legend{
     display:flex;flex-wrap:wrap;gap:8px 18px;
     background:var(--bg);border:1px solid var(--line);border-radius:10px;
@@ -321,14 +321,14 @@
     background:var(--ink);color:#fff;border-radius:6px;padding:2px 7px;flex-shrink:0;
   }
   .grade-legend-def{color:var(--slate);}
- 
+
   .toggle-wrap{display:flex;align-items:center;gap:10px;}
   .reveal-state{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:7px;}
   .reveal-state.on{background:var(--teal-soft);color:var(--teal);}
   .reveal-state.off{background:#F1E4E1;color:var(--danger);}
- 
+
   .footer-note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:26px;}
- 
+
   /* On narrow screens, tables with many columns (score entry, rankings) switch from a
      wide table to a stacked "label above value" card per row, so nothing needs horizontal
      scrolling — the 등수/평균 column especially was getting cut off requiring a swipe that
@@ -355,7 +355,7 @@
       color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
     }
   }
- 
+
   .toast-container{
     position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
     z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center;
@@ -366,7 +366,7 @@
     animation:toast-in .18s ease-out;
   }
   @keyframes toast-in{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
- 
+
   @media (max-width:640px){
     h1{font-size:19px;}
     .card{padding:16px;}
@@ -376,7 +376,7 @@
 </head>
 <body>
 <div id="app"></div>
- 
+
 <script>
 (function(){
   const GRADE_MAP = { 'A':100, 'B+':95, 'B':90, 'C':80, 'D':70, 'E':0 };
@@ -390,7 +390,7 @@
     'E': '불참석',
   };
   const INTERVIEWERS_ALL = ['A','B','C','D','E']; // 최대 5명까지 지원
- 
+
   let state = {
     role: null,
     adminSubPage: 'main', // 'main' | 'changelog'
@@ -407,14 +407,15 @@
     revealed: false,
     filter: '',
     ownRankingExpanded: false, // '나의 실시간 순위'는 기본적으로 접혀있음
+    showNewRoundModal: false, // 새 회차 시작 폼 (연속 prompt() 대신 화면 안 폼으로 대체 — 사파리에서 연속 prompt가 씹히는 문제 회피)
     visibleCounts: {}, // 목록별로 지금까지 "더 보기"로 펼친 개수 (지원자 많을 때 초기 렌더링 부담 완화)
     loaded: false,
     saving: false,
   };
- 
+
   const app = document.getElementById('app');
   function roundKey(roundId, base){ return `round:${roundId}:${base}`; }
- 
+
   // The round whose candidates/scores should currently be shown:
   // - Interviewers always follow whatever round the admin marked "active".
   // - The admin can browse a different (past) round without disturbing what
@@ -422,7 +423,7 @@
   function currentRoundId(){
     return state.role === 'admin' ? (state.viewRoundId || state.activeRoundId) : state.activeRoundId;
   }
- 
+
   // 면접관은 보통 3명이지만 회차에 따라 2~5명일 수 있음. 회차 메타데이터(interviewerCount)에서
   // 읽어오고, 없거나 잘못된 값이면 기본값 3으로 처리.
   function getInterviewerCount(roundId){
@@ -439,7 +440,7 @@
     const r = state.rounds.find(x => x.id === roundId);
     return (r && r.scoringMode === 'single') ? 'single' : 'dual';
   }
- 
+
   // ---------- storage helpers ----------
   // Backed by a Google Apps Script web app that reads/writes a Google Sheet, so it works
   // whether this page is opened inside Claude.ai, downloaded and opened locally, or hosted
@@ -448,7 +449,7 @@
   // Must exactly match SECRET_TOKEN in the Apps Script code — anyone with both this file
   // and the token can read/write the sheet, so don't publish this file publicly as-is.
   const SECRET_TOKEN = 'ffc4717c87628ccae6cf0bdd2e8cefcef3bb5e9e2a280e5c';
- 
+
   // getShared returns { ok:true, value } on a genuine read, or { ok:false } if the read
   // failed / key doesn't exist yet. Callers should NOT blindly overwrite good local state
   // with a failed read — that was the bug causing uploaded data to "disappear" on the
@@ -461,7 +462,7 @@
       return { ok:true, value: JSON.parse(data.value) };
     }catch(e){ return { ok:false }; }
   }
- 
+
   // Fetches several keys in ONE request instead of one request per key — Apps Script web
   // apps have noticeable per-request overhead, and issuing many of them (even in parallel)
   // was the main reason the app felt slow to open. Returns { [key]: {ok, value} }.
@@ -484,7 +485,7 @@
       return out;
     }catch(e){ return fallback; }
   }
- 
+
   async function setShared(key, value, tries=3){
     for(let i=0;i<tries;i++){
       try{
@@ -503,7 +504,7 @@
     }
     return false;
   }
- 
+
   // Snapshot of everything that would affect what's on screen, so the 3-second background
   // sync only triggers a full re-render when something has actually changed. Without this,
   // every poll rebuilt the entire page from scratch even when nothing was new — which got
@@ -517,14 +518,14 @@
       interviewerNames: state.interviewerNames, filter: state.filter, pins: state.pins,
     });
   }
- 
+
   async function loadAll(){
     const meta = await getSharedBatch(['rounds', 'activeRoundId', 'pins']);
     if(meta.rounds.ok) state.rounds = meta.rounds.value || [];
     if(meta.activeRoundId.ok) state.activeRoundId = meta.activeRoundId.value || null;
     if(meta.pins.ok && meta.pins.value) state.pins = { ...state.pins, ...meta.pins.value };
     if(!state.viewRoundId) state.viewRoundId = state.activeRoundId;
- 
+
     const rid = currentRoundId();
     if(!rid){
       state.candidates = [];
@@ -573,29 +574,14 @@
       render();
     }
   }
- 
+
   // ---------- round management ----------
-  async function createRound(){
-    const name = prompt('새 면접 회차의 이름을 입력해주세요 (예: 2026년 상반기 신입 공채 1차)', '');
-    if(name === null) return; // 취소
-    const finalName = name.trim() || `면접 회차 ${state.rounds.length + 1}`;
-    let interviewerCount = 3;
-    const countStr = prompt('이번 회차의 면접관 수를 입력해주세요 (2~5명, 보통은 3명)', '3');
-    if(countStr !== null){
-      const parsed = parseInt(countStr.trim(), 10);
-      if(!isNaN(parsed) && parsed >= 2 && parsed <= 5) interviewerCount = parsed;
-      else if(countStr.trim() !== '') alert('2~5 사이의 숫자가 아니어서 기본값 3명으로 설정했습니다.');
-    }
-    let scoringMode = 'dual';
-    const modeStr = prompt(
-      '이번 회차의 채점 기준을 선택해주세요.\n\n' +
-      '1 = 직무적합도 + 조직적합도를 각각 평가 (기본)\n' +
-      '2 = 등급 하나로만 종합평가 (예: 기자직처럼 단일 기준)',
-      '1'
-    );
-    if(modeStr !== null && modeStr.trim() === '2') scoringMode = 'single';
+  async function doCreateRound(name, interviewerCount, scoringMode){
+    const finalName = (name && name.trim()) || `면접 회차 ${state.rounds.length + 1}`;
+    const safeCount = (interviewerCount >= 2 && interviewerCount <= 5) ? interviewerCount : 3;
+    const safeMode = scoringMode === 'single' ? 'single' : 'dual';
     const id = 'r' + Date.now();
-    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount, scoringMode };
+    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount: safeCount, scoringMode: safeMode };
     state.rounds = [...state.rounds, round];
     state.activeRoundId = id;
     state.viewRoundId = id;
@@ -617,7 +603,56 @@
       setShared(roundKey(id,'interviewerNames'), { A:'', B:'', C:'', D:'', E:'' }),
     ]);
   }
- 
+
+  // 새 회차 시작 폼(화면 안 인라인 폼). 이름 / 면접관 수 / 채점 기준을 한 화면에서 입력받는다.
+  // (예전엔 prompt()를 3번 연달아 띄웠는데, 아이패드 사파리가 연속 prompt를 무시해버리는
+  // 경우가 있어서 이 방식으로 바꿨다.)
+  function buildNewRoundForm(){
+    const wrap = el(`
+      <div style="border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:14px;background:var(--bg);">
+        <p style="font-weight:700;font-size:14px;margin:0 0 12px;">새 면접 회차 시작</p>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:420px;">
+          <div>
+            <label style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">회차 이름</label>
+            <input type="text" id="newRoundName" class="filter-input" style="width:100%;" placeholder="예: 2026년 상반기 신입 공채 1차" />
+          </div>
+          <div>
+            <label style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">면접관 수</label>
+            <select id="newRoundCount" class="grade-select" style="width:100%;">
+              <option value="2">2명</option>
+              <option value="3" selected>3명 (기본)</option>
+              <option value="4">4명</option>
+              <option value="5">5명</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">채점 기준</label>
+            <select id="newRoundMode" class="grade-select" style="width:100%;">
+              <option value="dual" selected>직무적합도 + 조직적합도 각각 평가 (기본)</option>
+              <option value="single">등급 하나로만 종합평가 (예: 기자직)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn" id="newRoundCancelBtn">취소</button>
+          <button class="btn btn-teal" id="newRoundStartBtn">이 회차로 시작</button>
+        </div>
+      </div>`);
+    wrap.querySelector('#newRoundCancelBtn').addEventListener('click', ()=>{
+      state.showNewRoundModal = false; render();
+    });
+    wrap.querySelector('#newRoundStartBtn').addEventListener('click', ()=>{
+      const name = wrap.querySelector('#newRoundName').value;
+      const count = parseInt(wrap.querySelector('#newRoundCount').value, 10);
+      const mode = wrap.querySelector('#newRoundMode').value;
+      state.showNewRoundModal = false;
+      doCreateRound(name, count, mode);
+    });
+    setTimeout(()=> { const inp = wrap.querySelector('#newRoundName'); if(inp) inp.focus(); }, 0);
+    return wrap;
+  }
+
+
   // 면접관 본인의 실제 이름을 이번 회차에 저장. rid를 명시적으로 받아서, 관리자가 과거
   // 회차를 고쳐 적는 경우와 면접관이 진행 중인 회차에 적는 경우 모두 지원한다.
   async function setInterviewerName(rid, letter, name){
@@ -625,19 +660,19 @@
     render();
     await setShared(roundKey(rid, 'interviewerNames'), state.interviewerNames);
   }
- 
+
   async function switchViewRound(id){
     state.viewRoundId = id;
     await loadAll();
   }
- 
+
   async function makeActiveRound(id){
     if(!confirm('이 회차를 다시 "진행 중"으로 전환하면, 면접관 화면이 이 회차 데이터로 바뀝니다. 계속할까요?')) return;
     state.activeRoundId = id;
     render();
     await setShared('activeRoundId', id);
   }
- 
+
   // 회차를 이 웹앱의 회차 목록에서만 제거한다. round:<id>:candidates 등 구글 스프레드시트의
   // 실제 데이터는 그대로 남아있고, 단지 'rounds' 목록에서 참조가 빠져서 화면에 더 이상
   // 보이지 않게 될 뿐이다 (필요하면 시트에서 직접 확인 가능).
@@ -648,7 +683,7 @@
       ? `"${round ? round.name : ''}"은(는) 현재 진행 중인 회차입니다. 삭제하면 면접관 화면에 "진행 중인 회차 없음"으로 표시됩니다. 그래도 목록에서 삭제할까요? (스프레드시트의 실제 데이터는 삭제되지 않습니다)`
       : `"${round ? round.name : ''}" 회차를 목록에서 삭제할까요? 스프레드시트의 실제 데이터는 그대로 남고, 이 화면에서만 안 보이게 됩니다.`;
     if(!confirm(warn)) return;
- 
+
     state.rounds = state.rounds.filter(r => r.id !== id);
     if(state.activeRoundId === id) state.activeRoundId = null;
     if(state.viewRoundId === id) state.viewRoundId = state.activeRoundId;
@@ -658,7 +693,7 @@
       setShared('activeRoundId', state.activeRoundId),
     ]);
   }
- 
+
   // ---------- excel parsing ----------
   // 실제 채용시스템(잡코리아 등) 내보내기 파일과, 이전에 쓰던 간단한 테스트 양식을
   // 둘 다 인식할 수 있도록 헤더 텍스트를 정확 매칭한다. 열의 "위치(순서)"는 매번
@@ -687,7 +722,7 @@
     career_period_multi: ['경력사항-재직일자'],
     career_department_multi: ['경력사항-부서명'],
   };
- 
+
   function classifyColumn(header){
     const s = String(header||'').replace(/\s/g,'');
     for(const type in HEADER_EXACT_MAP){
@@ -701,7 +736,7 @@
     if((m = s.match(/^경력(\d+)$/))) return { type:'career_company', idx: parseInt(m[1],10) };
     return null;
   }
- 
+
   // 첫 몇 줄 중 실제 "헤더 행"이 어디인지 찾는다. 실제 채용시스템 파일은
   // 1행: 병합된 제목, 2행: 진짜 헤더, 3행: 1,2,3… 열 번호, 4행부터 데이터 — 이렇게
   // 되어 있어서 무조건 첫 행을 헤더로 보면 안 된다.
@@ -717,7 +752,7 @@
     }
     return 0;
   }
- 
+
   function handleFile(file){
     const reader = new FileReader();
     reader.onload = async (e)=>{
@@ -727,12 +762,12 @@
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'' });
         if(rows.length < 2){ alert('엑셀에 데이터가 없습니다.'); return; }
- 
+
         const headerRowIdx = findHeaderRowIndex(rows);
         const headers = rows[headerRowIdx];
         const cols = headers.map(classifyColumn);
         const hasName = cols.some(c => c && c.type === 'name');
- 
+
         // 헤더 다음 행이 1,2,3… 같은 열 번호 행이면 그 행도 건너뛰고 그 다음부터 데이터로 본다.
         let dataStartIdx = headerRowIdx + 1;
         const nextRow = rows[dataStartIdx];
@@ -741,7 +776,7 @@
           const numericRatio = nonEmpty.length ? nonEmpty.filter(v => /^\d+$/.test(String(v).trim())).length / nonEmpty.length : 0;
           if(nonEmpty.length >= 3 && numericRatio > 0.7) dataStartIdx++;
         }
- 
+
         const candidates = [];
         let seq = 0;
         for(let i=dataStartIdx;i<rows.length;i++){
@@ -778,7 +813,7 @@
           });
           if(!hasName){ rec.name = String(row[0] ?? '').trim(); }
           if(!rec.examNo){ rec.examNo = String(seq).padStart(3,'0'); } // 엑셀에 수험번호 열이 없으면 순번으로 자동 부여
- 
+
           if(multi.company || multi.type || multi.period || multi.department){
             // 회사명 배열의 길이를 기준으로, 같은 인덱스의 값들을 하나의 경력으로 묶는다
             // (실제 파일에서 모든 경력 하위 열의 항목 수가 항상 일치함을 확인함).
@@ -801,7 +836,7 @@
           candidates.push(rec);
         }
         if(candidates.length === 0){ alert('인식할 수 있는 지원자 행이 없습니다.'); return; }
- 
+
         if(state.candidates.length > 0){
           if(!confirm(`이미 ${state.candidates.length}명의 지원자 데이터가 있습니다. 새로 업로드한 ${candidates.length}명으로 덮어쓰면 기존 채점 결과와 매칭이 깨질 수 있습니다. 계속할까요?`)) return;
         }
@@ -819,7 +854,7 @@
     };
     reader.readAsArrayBuffer(file);
   }
- 
+
   async function resetAll(){
     if(!confirm('이번 회차의 모든 지원자 정보와 채점 결과, 공개 상태가 초기화됩니다. 계속할까요?')) return;
     const rid = currentRoundId();
@@ -837,14 +872,14 @@
     ]);
     render();
   }
- 
+
   async function toggleReveal(){
     const rid = currentRoundId();
     state.revealed = !state.revealed;
     render();
     await setShared(roundKey(rid,'revealed'), state.revealed);
   }
- 
+
   async function setScore(letter, candidateId, field, grade){
     const rid = state.activeRoundId; // 면접관은 항상 현재 진행 중인 회차에 채점
     if(!state.scores[letter][candidateId]) state.scores[letter][candidateId] = {};
@@ -856,7 +891,7 @@
     // of false-alarm popups. loadAll()'s poll will simply keep syncing in the background.
     await setShared(roundKey(rid, 'scores_' + letter), state.scores[letter]);
   }
- 
+
   // ---------- toast (non-blocking notification) ----------
   function showToast(msg){
     let container = document.getElementById('toastContainer');
@@ -872,7 +907,7 @@
     container.appendChild(t);
     setTimeout(()=>{ t.remove(); }, 3500);
   }
- 
+
   // ---------- calc ----------
   function ownAvg(letter, candidateId){
     const s = state.scores[letter][candidateId];
@@ -885,7 +920,7 @@
     if(!s.job || !s.culture) return null;
     return (GRADE_MAP[s.job] + GRADE_MAP[s.culture]) / 2;
   }
- 
+
   // Standard "1-2-2-4" competition ranking: candidates with an equal score share the
   // same rank, and the next distinct (lower) score skips ahead to its true position —
   // e.g. scores [100, 99, 99, 98] over 10 people become ranks [1, 2, 2, 4].
@@ -900,7 +935,7 @@
       return { ...item, rank };
     });
   }
- 
+
   function computeOwnRanking(letter){
     const list = state.candidates
       .map(c => ({ c, avg: ownAvg(letter, c.id) }))
@@ -908,7 +943,7 @@
       .sort((a,b)=> b.avg - a.avg);
     return assignStandardRanks(list, x => x.avg);
   }
- 
+
   // Map of candidateId -> { rank, total } among everyone this interviewer has finished scoring.
   function computeOwnRankMap(letter){
     const ranking = computeOwnRanking(letter);
@@ -916,7 +951,7 @@
     ranking.forEach(r => { map[r.c.id] = { rank: r.rank, total: ranking.length }; });
     return map;
   }
- 
+
   function computeFinal(){
     const letters = activeInterviewerLetters(currentRoundId());
     const all = state.candidates.map(c=>{
@@ -951,20 +986,20 @@
     const incomplete = all.filter(r=>!r.complete);
     return { complete, incomplete };
   }
- 
+
   function fmt(n){ return n===null || n===undefined ? '-' : n.toFixed(1); }
- 
+
   function filteredCandidates(){
     if(!state.filter.trim()) return state.candidates;
     const q = state.filter.trim();
     return state.candidates.filter(c => (c.name||'').includes(q) || (c.examNo||'').includes(q));
   }
- 
+
   // ---------- render ----------
   function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
- 
+
   const ROLE_LABELS = { admin:'관리자', A:'면접관 A', B:'면접관 B', C:'면접관 C', D:'면접관 D', E:'면접관 E' };
- 
+
   // 관리자 전용 "개발 기록" — 이 프로그램에 어떤 기능이 언제 추가/수정/제거되었는지 기록.
   // 새 기능을 추가하거나 고칠 때마다, 맨 위에 새 날짜 항목을 추가해주세요 (최신순).
   // 관리자 전용 "개발 기록" — 날짜 대신, 실제로 요청·수정된 순서 그대로 "업데이트 1, 2, 3…"
@@ -1213,8 +1248,14 @@
         { type:'수정', text:'단일평가 모드에서는 채점표에 등급 입력칸이 하나만 나오고, 최종 순위/엑셀 다운로드도 조직·직무 구분 없이 "평가 등급/점수"로 단순하게 표시됨' },
       ],
     },
+    {
+      label: '업데이트 34 · 새 회차 시작 방식 개선',
+      items: [
+        { type:'수정', text:'새 회차 시작 시 이름/면접관 수/채점 기준을 연속된 팝업(prompt) 3번 대신, 화면 안 입력폼 하나로 한 번에 입력하도록 변경 — 아이패드 사파리에서 연속 팝업이 무시되어 채점 기준 선택 창이 안 뜨던 문제 해결' },
+      ],
+    },
   ];
- 
+
   // Wrapper around the real render so that whatever text input the user is actively
   // typing into — the interviewer name field, the search box, a PIN code field, admin
   // name/code inputs, etc. — never gets interrupted or reset by a re-render, whether
@@ -1247,21 +1288,21 @@
     // re-renders if something has genuinely changed since this point.
     lastRenderSnapshot = takeRenderSnapshot();
   }
- 
+
   function renderInner(){
     app.innerHTML = '';
     app.appendChild(renderTop());
- 
+
     if(!state.loaded){
       app.appendChild(el(`<div class="card"><div class="empty-state">불러오는 중…</div></div>`));
       return;
     }
- 
+
     if(state.pendingRole){
       app.appendChild(renderPinGate());
       return;
     }
- 
+
     if(!state.role){
       app.appendChild(el(`
         <div class="hero-panel">
@@ -1275,16 +1316,16 @@
         </div>`));
       return;
     }
- 
+
     if(state.role === 'admin'){
       app.appendChild(renderAdmin());
     } else {
       app.appendChild(renderInterviewer(state.role));
     }
- 
+
     app.appendChild(el(`<div class="footer-note">데이터는 이 페이지를 사용하는 모든 사람과 공유됩니다 · 면접관 점수는 관리자가 공개하기 전까지 서로에게 보이지 않습니다</div>`));
   }
- 
+
   function renderPinGate(){
     const role = state.pendingRole;
     const card = el(`
@@ -1302,7 +1343,7 @@
           <button class="btn btn-primary" id="pinSubmitBtn">확인</button>
         </div>
       </div>`);
- 
+
     const field = card.querySelector('#pinField');
     const submit = ()=>{
       const val = field.value.trim();
@@ -1333,7 +1374,7 @@
     setTimeout(()=> field.focus(), 0);
     return card;
   }
- 
+
   function renderTop(){
     const wrap = el(`<div class="topbar">
       <div>
@@ -1368,7 +1409,7 @@
     }
     return wrap;
   }
- 
+
   function renderPinSettingsCard(){
     const card = el(`
       <div class="card">
@@ -1404,7 +1445,7 @@
     wrap.appendChild(table);
     return card;
   }
- 
+
   async function savePin(role, value, btnEl){
     if(value.length !== 4){
       showToast('코드는 4자리 숫자로 입력해주세요.');
@@ -1420,7 +1461,7 @@
     if(ok){ showToast(`${ROLE_LABELS[role]} 코드가 변경되었습니다.`); }
     else{ showToast('코드 저장에 실패했습니다. 다시 시도해주세요.'); }
   }
- 
+
   function renderRoundManagementCard(){
     const viewId = currentRoundId();
     const activeId = state.activeRoundId;
@@ -1432,11 +1473,18 @@
             <p class="card-title">면접 회차 관리</p>
             <p class="card-sub">회차별로 지원자 명단과 채점 결과가 따로 저장됩니다. 새로운 면접을 시작할 땐 새 회차를 만들어주세요. 지난 회차 데이터는 계속 남아있어 나중에 다시 확인할 수 있고, 헷갈리는 테스트 회차는 목록에서만 지울 수 있습니다 (스프레드시트의 실제 데이터는 남아있어요).</p>
           </div>
-          <button class="btn btn-teal" id="newRoundBtn">+ 새 회차 시작</button>
+          ${state.showNewRoundModal ? '' : '<button class="btn btn-teal" id="newRoundBtn">+ 새 회차 시작</button>'}
         </div>
-        ${sortedRounds.length ? '<div id="roundSelectWrap"></div>' : '<div class="empty-state" style="padding:20px 0;">아직 시작된 면접 회차가 없습니다. "새 회차 시작"을 눌러주세요.</div>'}
+        ${state.showNewRoundModal ? '' : (sortedRounds.length ? '<div id="roundSelectWrap"></div>' : '<div class="empty-state" style="padding:20px 0;">아직 시작된 면접 회차가 없습니다. "새 회차 시작"을 눌러주세요.</div>')}
+        <div id="newRoundFormWrap"></div>
       </div>`);
-    card.querySelector('#newRoundBtn').addEventListener('click', createRound);
+    if(state.showNewRoundModal){
+      card.querySelector('#newRoundFormWrap').appendChild(buildNewRoundForm());
+      return card;
+    }
+    card.querySelector('#newRoundBtn').addEventListener('click', ()=>{
+      state.showNewRoundModal = true; render();
+    });
     const selectWrap = card.querySelector('#roundSelectWrap');
     if(selectWrap){
       const row = el(`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -1469,7 +1517,7 @@
     }
     return card;
   }
- 
+
   function renderChangelogCard(){
     const badge = { '추가':'var(--teal)', '수정':'var(--amber)', '제거':'var(--danger)' };
     const entries = CHANGELOG.map(entry => {
@@ -1499,14 +1547,14 @@
     });
     return card;
   }
- 
+
   function renderAdmin(){
     if(state.adminSubPage === 'changelog'){
       const wrap = document.createElement('div');
       wrap.appendChild(renderChangelogCard());
       return wrap;
     }
- 
+
     const wrap = document.createElement('div');
     wrap.appendChild(renderRoundManagementCard());
     wrap.appendChild(el(`
@@ -1516,14 +1564,14 @@
     wrap.querySelector('#openChangelogBtn').addEventListener('click', ()=>{
       state.adminSubPage = 'changelog'; render();
     });
- 
+
     if(state.rounds.length === 0){
       return wrap; // 회차를 만들기 전에는 나머지 카드는 보여줄 필요가 없음
     }
- 
+
     const rid = currentRoundId();
     const isActive = rid === state.activeRoundId;
- 
+
     // upload card
     const uploadCard = el(`
       <div class="card">
@@ -1552,13 +1600,13 @@
       if(resetBtn) resetBtn.addEventListener('click', resetAll);
     }
     wrap.appendChild(uploadCard);
- 
+
     wrap.appendChild(renderPinSettingsCard());
- 
+
     if(state.candidates.length === 0){
       return wrap;
     }
- 
+
     // progress card
     const progressCard = el(`
       <div class="card">
@@ -1597,7 +1645,7 @@
     });
     pbody.appendChild(progressTable);
     wrap.appendChild(progressCard);
- 
+
     // final ranking card (admin can always preview)
     const roundInterviewerCount = roundLetters.length;
     const finalCard = el(`
@@ -1614,15 +1662,15 @@
     finalCard.querySelector('#finalTableWrap').appendChild(buildFinalTable());
     finalCard.querySelector('#exportExcelBtn').addEventListener('click', exportFinalResultsToExcel);
     wrap.appendChild(finalCard);
- 
+
     return wrap;
   }
- 
+
   function interviewerLabel(letter){
     const name = state.interviewerNames[letter];
     return name ? `면접관 ${letter} · ${name}` : `면접관 ${letter}`;
   }
- 
+
   // 경력 목록을 엑셀 셀 하나에 넣기 좋은 한 줄 텍스트로 변환 (예: "1. 삼성전자 계약직 (2024.01~2024.12) / 2. ...")
   // 저장된 careers 배열은 파일에 나온 순서(대개 최신순) 그대로다. 화면에는 "경력1이 가장
   // 오래된(처음 쌓은) 경력"이 되도록 뒤집어서 보여준다 — 예: 2000년 경력이 경력1, 2013년
@@ -1630,7 +1678,7 @@
   function orderedCareersOldestFirst(c){
     return (c.careers || []).slice().reverse();
   }
- 
+
   function careerToText(c){
     const careers = orderedCareersOldestFirst(c);
     if(careers.length === 0) return c.otherInfo || '';
@@ -1641,7 +1689,7 @@
       return `경력${i+1}: ${parts}${period ? ' ('+period+')' : ''}`;
     }).join(' / ');
   }
- 
+
   function exportFinalResultsToExcel(){
     const { complete, incomplete } = computeFinal();
     const letters = activeInterviewerLetters(currentRoundId());
@@ -1649,7 +1697,7 @@
     const maxScore = letters.length * 100;
     const scoreTotalKey = `종합점수(${maxScore}점)`;
     const scoringMode = getScoringMode(currentRoundId());
- 
+
     function baseFields(c){
       return {
         '수험번호': c.examNo || '',
@@ -1662,7 +1710,7 @@
         '경력': careerToText(c),
       };
     }
- 
+
     const rows = complete.map(r => {
       const row = { '순위': r.rank, ...baseFields(r.c) };
       labels.forEach((label, i)=>{
@@ -1710,7 +1758,7 @@
     const safeName = roundName.replace(/[\\/:*?"<>|]/g, '_');
     XLSX.writeFile(wb, `${safeName}_최종순위.xlsx`);
   }
- 
+
   function interviewerScoreBlock(label, culture, cultureGrade, job, jobGrade, subtotal, memo, mode){
     const memoHtml = memo ? `<div class="iv-memo">"${escapeHtml(memo)}"</div>` : '';
     const scoreLineHtml = mode === 'single'
@@ -1726,7 +1774,7 @@
       ${memoHtml}
     </div>`;
   }
- 
+
   // 카드 우측에 통째로 붙는 등수 사이드바. 무조건 한 줄로만 나오도록 함(줄바꿈 금지).
   // 지원자 카드가 수십~수백 개일 때 한꺼번에 다 그리면 느려지므로, 처음엔 일부만 보여주고
   // "더 보기"를 눌러야 나머지가 그려지도록 하는 공용 페이지네이션 헬퍼.
@@ -1745,14 +1793,14 @@
     });
     return btn;
   }
- 
+
   function rankSideHtml(rank, total){
     if(rank == null){
       return `<div class="rank-side-empty">평가중</div>`;
     }
     return `<div class="rank-side-num">${rank}등<span class="rank-side-slash"> / </span>${total}명</div>`;
   }
- 
+
   function candidateCardTop(c, i){
     return `
       <div class="cand-head">
@@ -1770,18 +1818,18 @@
         <div class="career-row">${renderCareerChips(c)}</div>
       </div>`;
   }
- 
+
   function buildFinalTable(){
     const { complete, incomplete } = computeFinal();
     const letters = activeInterviewerLetters(currentRoundId());
     const labels = letters.map(l => interviewerLabel(l));
     const maxScore = letters.length * 100;
     const scoringMode = getScoringMode(currentRoundId());
- 
+
     if(!complete.length && !incomplete.length){
       return el(`<div class="empty-state">등록된 지원자가 없습니다.</div>`);
     }
- 
+
     const builders = [];
     complete.forEach((r, i)=>{
       builders.push(()=>{
@@ -1818,7 +1866,7 @@
         </div>`);
       });
     });
- 
+
     const wrap = document.createElement('div');
     const pageKey = `final_${currentRoundId()}`;
     const shownCount = getVisibleCount(pageKey, builders.length);
@@ -1827,29 +1875,29 @@
     if(moreBtn) wrap.appendChild(moreBtn);
     return wrap;
   }
- 
+
   function renderInterviewer(letter){
     const wrap = document.createElement('div');
- 
+
     if(!state.activeRoundId){
       wrap.appendChild(el(`<div class="card"><div class="empty-state"><div class="big">진행 중인 면접 회차가 없습니다</div>관리자가 새 회차를 시작하면 자동으로 이곳에 표시됩니다.</div></div>`));
       return wrap;
     }
- 
+
     const activeRound = state.rounds.find(r => r.id === state.activeRoundId);
     wrap.appendChild(el(`<div class="banner info" style="margin-bottom:10px;">
       📌 지금 채점 중인 회차: <b>${escapeHtml(activeRound ? activeRound.name : '(이름 없음)')}</b> — 관리자가 지정한 회차이며, 이 화면에서는 바꿀 수 없습니다. 인사팀에서 안내받은 회차와 같은지 확인해주세요.
     </div>`));
- 
+
     if(state.candidates.length === 0){
       wrap.appendChild(el(`<div class="card"><div class="empty-state"><div class="big">아직 등록된 지원자가 없습니다</div>관리자가 지원자 명단을 업로드하면 이곳에 표시됩니다.</div></div>`));
       return wrap;
     }
- 
+
     wrap.appendChild(el(`<div class="banner info">
       🔒 면접관 ${letter}님은 본인이 입력한 점수만 볼 수 있습니다. 다른 면접관의 점수와 순위는 관리자가 <b>전체 순위 공개</b>를 하기 전까지 보이지 않습니다.
     </div>`));
- 
+
     const nameCard = el(`
       <div class="card" style="margin-top:16px;">
         <div class="card-head">
@@ -1863,7 +1911,7 @@
     const nameInput = nameCard.querySelector('#interviewerNameInput');
     nameInput.addEventListener('change', ()=> setInterviewerName(state.activeRoundId, letter, nameInput.value.trim()));
     wrap.appendChild(nameCard);
- 
+
     const myName = state.interviewerNames[letter];
     const scoreCardMode = getScoringMode(state.activeRoundId);
     const scoreCardSub = scoreCardMode === 'single'
@@ -1886,7 +1934,7 @@
     });
     scoreCard.querySelector('#scoreTableWrap').appendChild(buildScoreTable(letter));
     wrap.appendChild(scoreCard);
- 
+
     // own live ranking
     const ranking = computeOwnRanking(letter);
     const isExpanded = state.ownRankingExpanded;
@@ -1939,7 +1987,7 @@
       }
     }
     wrap.appendChild(rankCard);
- 
+
     // if revealed, show final table too
     if(state.revealed){
       const roundInterviewerCount2 = activeInterviewerLetters(state.activeRoundId).length;
@@ -1956,10 +2004,10 @@
       finalCard.querySelector('#finalTableWrap2').appendChild(buildFinalTable());
       wrap.appendChild(finalCard);
     }
- 
+
     return wrap;
   }
- 
+
   function buildScoreTable(letter){
     const list = filteredCandidates();
     if(list.length === 0){
@@ -2033,7 +2081,7 @@
     if(moreBtn) wrap.appendChild(moreBtn);
     return wrap;
   }
- 
+
   function renderGradeLegend(){
     const items = Object.entries(GRADE_DEFINITIONS).map(([grade, def])=>{
       return `<div class="grade-legend-item">
@@ -2043,7 +2091,7 @@
     }).join('');
     return `<div class="grade-legend">${items}</div>`;
   }
- 
+
   function buildGradeSelect(current, onChange){
     const sel = el(`<select class="grade-select">
       <option value="">-</option>
@@ -2052,12 +2100,12 @@
     sel.addEventListener('change', (e)=>{ if(e.target.value) onChange(e.target.value); });
     return sel;
   }
- 
+
   function escapeHtml(s){
     return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
   function escapeAttr(s){ return escapeHtml(s); }
- 
+
   // Renders a candidate's structured career list (경력1/경력종류1/경력기간1 …) as clean,
   // numbered entries instead of one run-on line — most recent (경력1) first.
   // "중앙일보(2024.06.11~2025.08.09)" 처럼 회사명 칸에 기간이 괄호로 같이 들어있는 경우,
@@ -2068,7 +2116,7 @@
     if(m) return { name: m[1].trim(), period: m[2].trim() };
     return { name: s, period: '' };
   }
- 
+
   // 기본정보(생년월일/성별/나이 · 대학/전공 · 대학원/전공)를 여러 표에서 동일하게 표시하기
   // 위한 공통 렌더러. 대학원 정보는 있을 때만 한 줄 추가로 보여준다.
   // 채용시스템 원본 파일은 "해당없음"을 종종 빈 문자열 대신 하이픈(-)으로 채워 넣는다.
@@ -2077,7 +2125,7 @@
     const s = String(v ?? '').trim();
     return s === '' || s === '-';
   }
- 
+
   // "주전공 : 국문학과(...)\n복수전공 : 철학과(...)" 형태의 텍스트를 주전공/복수전공으로 분리.
   // 접두어가 없으면 통째로 주전공으로 취급한다.
   function parseMajorText(raw){
@@ -2096,13 +2144,13 @@
     });
     return { major, doubleMajor, minor };
   }
- 
+
   // 노션처럼, 라벨을 작은 색깔 사각형 태그로 값 앞에 붙여서 표시.
   // 카드형 지원자 UI: 학사/석사/박사 정보를 알약 모양 태그로 압축 표시.
   function renderInfoTagsRow(c){
     const tags = [];
     const tag = (text, color) => `<span class="tag"><span class="tag-dot" style="background:${color};"></span>${escapeHtml(text)}</span>`;
- 
+
     if(!isBlankValue(c.university)){
       const { major, doubleMajor, minor } = parseMajorText(c.department);
       tags.push(tag(`학사 대학교 · ${c.university}`, 'var(--teal)'));
@@ -2123,7 +2171,7 @@
     });
     return tags.join('');
   }
- 
+
   // 카드형 지원자 UI: 경력을 가로로 넘겨볼 수 있는 칩으로, "경력1"이 가장 오래된(처음 쌓은)
   // 경력이 되도록 과거순으로 번호를 매긴다.
   // "2024.02.26 ~ 2026.01.30" 같은 기간 텍스트에서 근무 개월수를 계산해서
@@ -2152,7 +2200,7 @@
     if(years === 0) return `${months}개월`;
     return rem > 0 ? `${years}년 ${rem}개월` : `${years}년`;
   }
- 
+
   function renderCareerChips(c){
     const careers = orderedCareersOldestFirst(c);
     if(careers.length === 0){
@@ -2175,7 +2223,7 @@
       </div>`;
     }).join('');
   }
- 
+
   // ---------- boot ----------
   loadAll();
   setInterval(loadAll, 3000);
