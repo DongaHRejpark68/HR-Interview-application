@@ -542,8 +542,15 @@
     });
   }
 
+  // 렉이 심하거나 네트워크가 느릴 때, 여러 loadAll() 호출이 동시에 진행되다가 "먼저 보낸
+  // 요청이 나중에 응답"으로 도착하면, 그 오래된 데이터가 이미 반영된 최신 상태를 덮어써서
+  // (예: 방금 전환한 회차가 갑자기 예전 회차로 되돌아가는) 문제가 생길 수 있다. 매 호출마다
+  // 번호를 매겨서, 자신보다 더 최신 호출이 이미 시작됐으면 그 결과는 버린다.
+  let loadAllGeneration = 0;
   async function loadAll(){
+    const myGen = ++loadAllGeneration;
     const meta = await getSharedBatch(['rounds', 'activeRoundId', 'pins']);
+    if(myGen !== loadAllGeneration) return; // 더 최신 요청이 이미 시작됨 — 이 결과는 폐기
     if(meta.rounds.ok) state.rounds = meta.rounds.value || [];
     if(meta.activeRoundId.ok) state.activeRoundId = meta.activeRoundId.value || null;
     if(meta.pins.ok && meta.pins.value) state.pins = { ...state.pins, ...meta.pins.value };
@@ -567,6 +574,7 @@
       roundKey(rid,'revealed'),
       roundKey(rid,'interviewerNames'),
     ]);
+    if(myGen !== loadAllGeneration) return; // 더 최신 요청이 이미 시작됨 — 이 결과는 폐기
     const cand = roundData[roundKey(rid,'candidates')];
     const rev = roundData[roundKey(rid,'revealed')];
     const names = roundData[roundKey(rid,'interviewerNames')];
@@ -1331,6 +1339,14 @@
       items: [
         { type:'수정', text:'검색창에 한글을 입력할 때 아이패드에서 자음/모음이 낱개로 따로 입력되던 문제 수정 (한글 조합 중에는 화면을 다시 그리지 않도록 처리)' },
         { type:'수정', text:'등급을 한 번 입력한 뒤 다시 빈칸(-)으로 되돌리면 실제로는 값이 지워지지 않던 버그 수정' },
+      ],
+    },
+    {
+      label: '업데이트 38 · 회차가 쌓일수록 느려지는 문제 개선',
+      items: [
+        { type:'수정', text:'구글 시트 조회 방식을 개선 — 지금까지는 값 하나를 찾을 때도 지원자 명단처럼 용량이 큰 다른 회차 데이터까지 매번 다 읽어왔는데, 이제 필요한 값만 정확히 찾아서 가져오도록 Apps Script 코드를 최적화함 (회차/테스트가 많이 쌓일수록 느려지던 원인)' },
+        { type:'수정', text:'자동 동기화 주기를 3초에서 5초로 늘려 서버 부담 완화' },
+        { type:'수정', text:'네트워크가 느릴 때 오래된 응답이 늦게 도착해 최신 상태(예: 방금 전환한 회차)를 덮어써서 화면이 예전 회차로 되돌아가 보이던 문제 방지' },
       ],
     },
   ];
@@ -2393,7 +2409,7 @@
 
   // ---------- boot ----------
   loadAll();
-  setInterval(loadAll, 3000);
+  setInterval(loadAll, 5000);
 })();
 </script>
 </body>
