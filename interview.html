@@ -379,16 +379,38 @@
 
 <script>
 (function(){
-  const GRADE_MAP = { 'A':100, 'B+':95, 'B':90, 'C':80, 'D':70, 'E':0 };
-  const GRADES = ['A','B+','B','C','D','E'];
-  const GRADE_DEFINITIONS = {
-    'A': '기대수준 이상',
-    'B+': '기대 수준에 부합함',
-    'B': '대부분 부합하지만 일부 부족함',
-    'C': '근거를 찾을 수 없음',
-    'D': '부합하지 않음',
-    'E': '불참석',
+  // 회차마다 다른 등급 체계를 쓸 수 있도록 두 가지 스케일을 준비.
+  // 'plus'(기존 기본값): A/B+/B/C/D + E(불참석, 0점 처리)
+  // 'flat'(새 옵션): A/B/C/D/E 자체가 5단계 평가 등급 (B+ 없음, E도 실제 평가 등급)
+  const GRADE_SCALES = {
+    plus: {
+      grades: ['A','B+','B','C','D','E'],
+      map: { 'A':100, 'B+':95, 'B':90, 'C':80, 'D':70, 'E':0 },
+      definitions: {
+        'A': '기대수준 이상',
+        'B+': '기대 수준에 부합함',
+        'B': '대부분 부합하지만 일부 부족함',
+        'C': '근거를 찾을 수 없음',
+        'D': '부합하지 않음',
+        'E': '불참석',
+      },
+    },
+    flat: {
+      grades: ['A','B','C','D','E'],
+      map: { 'A':100, 'B':90, 'C':80, 'D':70, 'E':0 },
+      definitions: {
+        'A': '기대수준 이상',
+        'B': '기대 수준에 부합함',
+        'C': '대부분 부합하지만 일부 부족함',
+        'D': '근거를 찾을 수 없음',
+        'E': '부합하지 않음, 혹은 불참석',
+      },
+    },
   };
+  function getGradeScale(roundId){
+    const r = state.rounds.find(x => x.id === roundId);
+    return (r && r.gradeScale === 'flat') ? GRADE_SCALES.flat : GRADE_SCALES.plus;
+  }
   const INTERVIEWERS_ALL = ['A','B','C','D','E']; // 최대 5명까지 지원
 
   let state = {
@@ -408,6 +430,7 @@
     filter: '',
     ownRankingExpanded: false, // '나의 실시간 순위'는 기본적으로 접혀있음
     showNewRoundModal: false, // 새 회차 시작 폼 (연속 prompt() 대신 화면 안 폼으로 대체 — 사파리에서 연속 prompt가 씹히는 문제 회피)
+    reorderFilter: '', // 관리자 전용 "지원자 순서 관리" 검색창 (면접관용 state.filter와는 별개)
     visibleCounts: {}, // 목록별로 지금까지 "더 보기"로 펼친 개수 (지원자 많을 때 초기 렌더링 부담 완화)
     loaded: false,
     saving: false,
@@ -576,12 +599,13 @@
   }
 
   // ---------- round management ----------
-  async function doCreateRound(name, interviewerCount, scoringMode){
+  async function doCreateRound(name, interviewerCount, scoringMode, gradeScale){
     const finalName = (name && name.trim()) || `면접 회차 ${state.rounds.length + 1}`;
     const safeCount = (interviewerCount >= 2 && interviewerCount <= 5) ? interviewerCount : 3;
     const safeMode = scoringMode === 'single' ? 'single' : 'dual';
+    const safeGradeScale = gradeScale === 'flat' ? 'flat' : 'plus';
     const id = 'r' + Date.now();
-    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount: safeCount, scoringMode: safeMode };
+    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount: safeCount, scoringMode: safeMode, gradeScale: safeGradeScale };
     state.rounds = [...state.rounds, round];
     state.activeRoundId = id;
     state.viewRoundId = id;
@@ -632,6 +656,13 @@
               <option value="single">등급 하나로만 종합평가 (예: 기자직)</option>
             </select>
           </div>
+          <div>
+            <label style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">등급 체계</label>
+            <select id="newRoundGradeScale" class="grade-select" style="width:100%;">
+              <option value="plus" selected>A / B+ / B / C / D 등급 (기본, E=불참석)</option>
+              <option value="flat">A / B / C / D / E 등급 (100/90/80/70/0점)</option>
+            </select>
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:16px;">
           <button class="btn" id="newRoundCancelBtn">취소</button>
@@ -645,8 +676,9 @@
       const name = wrap.querySelector('#newRoundName').value;
       const count = parseInt(wrap.querySelector('#newRoundCount').value, 10);
       const mode = wrap.querySelector('#newRoundMode').value;
+      const gradeScale = wrap.querySelector('#newRoundGradeScale').value;
       state.showNewRoundModal = false;
-      doCreateRound(name, count, mode);
+      doCreateRound(name, count, mode, gradeScale);
     });
     setTimeout(()=> { const inp = wrap.querySelector('#newRoundName'); if(inp) inp.focus(); }, 0);
     return wrap;
@@ -912,13 +944,14 @@
   function ownAvg(letter, candidateId){
     const s = state.scores[letter][candidateId];
     if(!s) return null;
+    const gradeMap = getGradeScale(currentRoundId()).map;
     if(getScoringMode(currentRoundId()) === 'single'){
       // 단일평가 모드: 등급 하나(job 필드에 저장)만으로 판단, 평균 낼 필요 없음
       if(!s.job) return null;
-      return GRADE_MAP[s.job];
+      return gradeMap[s.job];
     }
     if(!s.job || !s.culture) return null;
-    return (GRADE_MAP[s.job] + GRADE_MAP[s.culture]) / 2;
+    return (gradeMap[s.job] + gradeMap[s.culture]) / 2;
   }
 
   // Standard "1-2-2-4" competition ranking: candidates with an equal score share the
@@ -954,15 +987,16 @@
 
   function computeFinal(){
     const letters = activeInterviewerLetters(currentRoundId());
+    const gradeMap = getGradeScale(currentRoundId()).map;
     const all = state.candidates.map(c=>{
       const per = letters.map(k => ownAvg(k, c.id));
       const jobs = letters.map(k => {
         const s = state.scores[k][c.id];
-        return (s && s.job) ? GRADE_MAP[s.job] : null;
+        return (s && s.job) ? gradeMap[s.job] : null;
       });
       const cultures = letters.map(k => {
         const s = state.scores[k][c.id];
-        return (s && s.culture) ? GRADE_MAP[s.culture] : null;
+        return (s && s.culture) ? gradeMap[s.culture] : null;
       });
       const jobGrades = letters.map(k => {
         const s = state.scores[k][c.id];
@@ -993,6 +1027,29 @@
     if(!state.filter.trim()) return state.candidates;
     const q = state.filter.trim();
     return state.candidates.filter(c => (c.name||'').includes(q) || (c.examNo||'').includes(q));
+  }
+
+  // 관리자 전용 "지원자 순서 관리"에서 쓰는 검색. 실제 배열 인덱스(i)를 같이 들고 있어야
+  // 필터링된 상태에서도 진짜 위치를 옮길 수 있다.
+  function filteredForReorder(){
+    const withIdx = state.candidates.map((c, i) => ({ c, i }));
+    if(!state.reorderFilter.trim()) return withIdx;
+    const q = state.reorderFilter.trim();
+    return withIdx.filter(({c}) => (c.name||'').includes(q) || (c.examNo||'').includes(q));
+  }
+
+  // 지원자를 배열의 fromIndex 위치에서 toIndex 위치로 옮긴다(수험번호 순서가 아니라
+  // 실제 면접 순서 자체를 바꾸는 것 — 순번은 이 배열 순서에서 그대로 파생되므로,
+  // 관리자가 한 번 옮기면 면접관 A/B/C 화면에도 즉시 동일하게 반영된다).
+  async function moveCandidate(fromIndex, toIndex){
+    const total = state.candidates.length;
+    toIndex = Math.max(0, Math.min(total - 1, toIndex));
+    if(fromIndex === toIndex) return;
+    const [item] = state.candidates.splice(fromIndex, 1);
+    state.candidates.splice(toIndex, 0, item);
+    render();
+    const rid = currentRoundId();
+    await setShared(roundKey(rid, 'candidates'), state.candidates);
   }
 
   // ---------- render ----------
@@ -1254,6 +1311,28 @@
         { type:'수정', text:'새 회차 시작 시 이름/면접관 수/채점 기준을 연속된 팝업(prompt) 3번 대신, 화면 안 입력폼 하나로 한 번에 입력하도록 변경 — 아이패드 사파리에서 연속 팝업이 무시되어 채점 기준 선택 창이 안 뜨던 문제 해결' },
       ],
     },
+    {
+      label: '업데이트 35 · 회차별 등급 체계 선택',
+      items: [
+        { type:'추가', text:'새 회차 시작 시 등급 체계도 선택 가능하도록 추가 — "A/B+/B/C/D 등급"(기본, E=불참석) 또는 "A/B/C/D/E 등급"(100/90/80/70/0점) 중 선택' },
+        { type:'수정', text:'선택한 등급 체계가 채점표의 등급 선택칸, 등급 기준 범례, 점수 산출 계산에 모두 동일하게 반영됨' },
+      ],
+    },
+    {
+      label: '업데이트 36 · 지원자 순서 관리 (관리자 전용)',
+      items: [
+        { type:'추가', text:'관리자 화면에 "지원자 순서 관리" 카드 추가 — 지원자가 면접 시간을 바꿔달라고 한 경우처럼 순서를 직접 조정 가능 (▲▼ 한 칸 이동 또는 원하는 순번으로 바로 이동)' },
+        { type:'수정', text:'관리자가 순서를 바꾸면 면접관 A/B/C 화면의 순번에도 즉시 동일하게 반영됨. 이 기능은 면접관 화면에는 노출되지 않음' },
+        { type:'수정', text:'A/B/C/D/E 등급 체계의 E 정의를 "부합하지 않음, 혹은 불참석"으로 수정' },
+      ],
+    },
+    {
+      label: '업데이트 37 · 검색창 한글 입력 및 등급 초기화 버그 수정',
+      items: [
+        { type:'수정', text:'검색창에 한글을 입력할 때 아이패드에서 자음/모음이 낱개로 따로 입력되던 문제 수정 (한글 조합 중에는 화면을 다시 그리지 않도록 처리)' },
+        { type:'수정', text:'등급을 한 번 입력한 뒤 다시 빈칸(-)으로 되돌리면 실제로는 값이 지워지지 않던 버그 수정' },
+      ],
+    },
   ];
 
   // Wrapper around the real render so that whatever text input the user is actively
@@ -1410,6 +1489,70 @@
     return wrap;
   }
 
+  // 관리자 전용: 지원자 면접 순서를 직접 바꾸는 카드. 여기서 옮기면 candidates 배열
+  // 순서 자체가 바뀌고, 순번은 이 순서에서 그대로 파생되므로 면접관 A/B/C 화면에도
+  // 즉시 동일하게 반영된다. 면접관 화면에는 이 기능을 노출하지 않음(헷갈림 방지).
+  function renderReorderCard(){
+    const card = el(`
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <p class="card-title">지원자 순서 관리</p>
+            <p class="card-sub">지원자가 면접 시간을 바꿔달라고 한 경우처럼, 순서를 직접 조정할 수 있습니다. 여기서 옮긴 순서는 면접관 A/B/C 화면에도 그대로 똑같이 반영돼요 (면접관 화면에는 이 기능이 따로 보이지 않습니다).</p>
+          </div>
+          <input type="text" class="filter-input" id="reorderFilterInput" placeholder="이름 또는 수험번호로 검색" value="${escapeAttr(state.reorderFilter)}" />
+        </div>
+        <div id="reorderListWrap"></div>
+      </div>`);
+    attachImeAwareSearchInput(card.querySelector('#reorderFilterInput'), (val)=>{
+      state.reorderFilter = val; render();
+    });
+
+    const listWrap = card.querySelector('#reorderListWrap');
+    const entries = filteredForReorder();
+    if(entries.length === 0){
+      listWrap.appendChild(el(`<div class="empty-state">검색 결과가 없습니다.</div>`));
+      return card;
+    }
+    const total = state.candidates.length;
+    const pageKey = `reorder_${currentRoundId()}`;
+    const shownCount = getVisibleCount(pageKey, entries.length);
+    const table = el(`<table class="responsive-table">
+      <thead><tr><th>순번</th><th>수험번호</th><th>이름</th><th>순서 이동</th></tr></thead>
+      <tbody></tbody>
+    </table>`);
+    const tbody = table.querySelector('tbody');
+    entries.slice(0, shownCount).forEach(({c, i})=>{
+      const tr = el(`<tr>
+        <td class="mono-cell" data-label="순번">${i+1}</td>
+        <td class="mono-cell" data-label="수험번호">${escapeHtml(c.examNo||'-')}</td>
+        <td class="name-cell" data-label="이름">${escapeHtml(c.name)}</td>
+        <td data-label="순서 이동" style="white-space:nowrap;">
+          <button class="btn" data-act="up" style="padding:5px 10px;" ${i===0?'disabled':''}>▲</button>
+          <button class="btn" data-act="down" style="padding:5px 10px;" ${i===total-1?'disabled':''}>▼</button>
+          <input type="text" inputmode="numeric" class="filter-input" data-act="jumpInput" style="width:64px;padding:6px 8px;" placeholder="${i+1}" />
+          <button class="btn btn-teal" data-act="jump" style="padding:5px 10px;">이동</button>
+        </td>
+      </tr>`);
+      tr.querySelector('[data-act="up"]').addEventListener('click', ()=> moveCandidate(i, i-1));
+      tr.querySelector('[data-act="down"]').addEventListener('click', ()=> moveCandidate(i, i+1));
+      const jumpInput = tr.querySelector('[data-act="jumpInput"]');
+      tr.querySelector('[data-act="jump"]').addEventListener('click', ()=>{
+        const target = parseInt(jumpInput.value, 10);
+        if(!target || target < 1 || target > total){
+          showToast(`1~${total} 사이의 순번을 입력해주세요.`);
+          return;
+        }
+        moveCandidate(i, target - 1);
+      });
+      tbody.appendChild(tr);
+    });
+    listWrap.appendChild(table);
+    const moreBtn = buildShowMoreBtn(pageKey, shownCount, entries.length);
+    if(moreBtn) listWrap.appendChild(moreBtn);
+    return card;
+  }
+
   function renderPinSettingsCard(){
     const card = el(`
       <div class="card">
@@ -1498,7 +1641,8 @@
         const opt = document.createElement('option');
         opt.value = r.id;
         const modeTag = r.scoringMode === 'single' ? ' · 단일평가' : '';
-        opt.textContent = r.name + ` · 면접관 ${r.interviewerCount||3}명${modeTag}` + (r.id===activeId ? ' (진행중)' : '');
+        const scaleTag = r.gradeScale === 'flat' ? ' · A~E등급' : '';
+        opt.textContent = r.name + ` · 면접관 ${r.interviewerCount||3}명${modeTag}${scaleTag}` + (r.id===activeId ? ' (진행중)' : '');
         if(r.id === viewId) opt.selected = true;
         select.appendChild(opt);
       });
@@ -1605,6 +1749,10 @@
 
     if(state.candidates.length === 0){
       return wrap;
+    }
+
+    if(isActive){
+      wrap.appendChild(renderReorderCard());
     }
 
     // progress card
@@ -1929,8 +2077,8 @@
         ${renderGradeLegend()}
         <div id="scoreTableWrap"></div>
       </div>`);
-    scoreCard.querySelector('#filterInput').addEventListener('input', (e)=>{
-      state.filter = e.target.value; render();
+    attachImeAwareSearchInput(scoreCard.querySelector('#filterInput'), (val)=>{
+      state.filter = val; render();
     });
     scoreCard.querySelector('#scoreTableWrap').appendChild(buildScoreTable(letter));
     wrap.appendChild(scoreCard);
@@ -2083,7 +2231,8 @@
   }
 
   function renderGradeLegend(){
-    const items = Object.entries(GRADE_DEFINITIONS).map(([grade, def])=>{
+    const definitions = getGradeScale(state.activeRoundId).definitions;
+    const items = Object.entries(definitions).map(([grade, def])=>{
       return `<div class="grade-legend-item">
         <span class="grade-legend-badge">${escapeHtml(grade)}</span>
         <span class="grade-legend-def">${escapeHtml(def)}</span>
@@ -2092,12 +2241,30 @@
     return `<div class="grade-legend">${items}</div>`;
   }
 
+  // 검색창에 한글을 입력할 때, 조합 중간(예: ㅇ→이→이세→이세원)마다 매번 화면을
+  // 다시 그리면 브라우저의 한글 조합 상태가 깨져서 자음/모음이 낱개로 따로 입력되는
+  // 문제가 있었다(특히 아이패드). compositionstart~compositionend 사이에는 리렌더링을
+  // 미루고, 조합이 끝난 뒤에만 실제로 검색을 적용하도록 한다.
+  function attachImeAwareSearchInput(inputEl, onValue){
+    let composing = false;
+    inputEl.addEventListener('compositionstart', ()=>{ composing = true; });
+    inputEl.addEventListener('compositionend', (e)=>{
+      composing = false;
+      onValue(e.target.value);
+    });
+    inputEl.addEventListener('input', (e)=>{
+      if(composing) return;
+      onValue(e.target.value);
+    });
+  }
+
   function buildGradeSelect(current, onChange){
+    const grades = getGradeScale(state.activeRoundId).grades;
     const sel = el(`<select class="grade-select">
       <option value="">-</option>
-      ${GRADES.map(g=>`<option value="${g}" ${g===current?'selected':''}>${g}</option>`).join('')}
+      ${grades.map(g=>`<option value="${g}" ${g===current?'selected':''}>${g}</option>`).join('')}
     </select>`);
-    sel.addEventListener('change', (e)=>{ if(e.target.value) onChange(e.target.value); });
+    sel.addEventListener('change', (e)=>{ onChange(e.target.value); });
     return sel;
   }
 
