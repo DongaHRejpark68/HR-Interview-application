@@ -126,6 +126,19 @@
   }
   select.grade-select:focus{outline:2px solid var(--teal);outline-offset:1px;}
 
+  .grade-chip-row{display:flex;flex-wrap:nowrap;gap:6px;}
+  .grade-chip{
+    display:flex;align-items:center;gap:5px;font-family:var(--sans);font-weight:700;font-size:13px;
+    border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:#fff;color:var(--slate);
+    cursor:pointer;white-space:nowrap;flex-shrink:0;
+  }
+  .grade-chip-box{
+    width:16px;height:16px;border-radius:5px;border:1.5px solid var(--muted);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;
+  }
+  .grade-chip.selected{border-color:var(--teal);background:var(--teal-soft);color:var(--teal);}
+  .grade-chip.selected .grade-chip-box{background:var(--teal);border-color:var(--teal);}
+
   .avg-pill{
     font-family:var(--mono);font-weight:600;font-size:13px;
     background:var(--teal-soft);color:var(--teal);padding:4px 9px;border-radius:7px;
@@ -431,6 +444,8 @@
     ownRankingExpanded: false, // '나의 실시간 순위'는 기본적으로 접혀있음
     showNewRoundModal: false, // 새 회차 시작 폼 (연속 prompt() 대신 화면 안 폼으로 대체 — 사파리에서 연속 prompt가 씹히는 문제 회피)
     reorderFilter: '', // 관리자 전용 "지원자 순서 관리" 검색창 (면접관용 state.filter와는 별개)
+    adminMemos: {}, // 회차별 관리자 전용 메모 (면접관에게는 보이지 않음) — { candidateId: '메모' }
+    adminMemoFilter: '', // 관리자 메모 카드 검색창
     visibleCounts: {}, // 목록별로 지금까지 "더 보기"로 펼친 개수 (지원자 많을 때 초기 렌더링 부담 완화)
     loaded: false,
     saving: false,
@@ -489,24 +504,23 @@
   // Fetches several keys in ONE request instead of one request per key — Apps Script web
   // apps have noticeable per-request overhead, and issuing many of them (even in parallel)
   // was the main reason the app felt slow to open. Returns { [key]: {ok, value} }.
-  async function getSharedBatch(keys){
-    const fallback = {};
-    keys.forEach(k => { fallback[k] = { ok:false }; });
+  // 앱을 열 때/자동 동기화 때마다 "공통 정보 조회 → 그 결과로 회차 데이터 조회"를
+  // 순서대로 2번 하던 걸, 서버(Apps Script)가 활성 회차까지 알아서 판단해서 한 번에
+  // 돌려주는 방식으로 바꿔 왕복 횟수를 절반으로 줄인다. 반환값은 raw string 그대로이며,
+  // 호출부에서 필요에 맞게 JSON.parse해서 쓴다.
+  async function bootstrapFetch(viewRoundId){
     try{
-      const res = await fetch(`${API_URL}?action=getBatch&keys=${encodeURIComponent(keys.join(','))}&token=${encodeURIComponent(SECRET_TOKEN)}`);
+      const url = `${API_URL}?action=bootstrap&viewRoundId=${encodeURIComponent(viewRoundId||'')}&token=${encodeURIComponent(SECRET_TOKEN)}`;
+      const res = await fetch(url);
       const data = await res.json();
-      if(!data.ok || !data.values) return fallback;
-      const out = {};
-      keys.forEach(k=>{
-        if(Object.prototype.hasOwnProperty.call(data.values, k)){
-          try{ out[k] = { ok:true, value: JSON.parse(data.values[k]) }; }
-          catch(e){ out[k] = { ok:false }; }
-        } else {
-          out[k] = { ok:false };
-        }
-      });
-      return out;
-    }catch(e){ return fallback; }
+      if(!data.ok || !data.values) return null;
+      return data.values; // { key: rawJsonString, ... }
+    }catch(e){ return null; }
+  }
+  function parseBootstrapValue(values, key){
+    if(!values || !Object.prototype.hasOwnProperty.call(values, key)) return { ok:false };
+    try{ return { ok:true, value: JSON.parse(values[key]) }; }
+    catch(e){ return { ok:false }; }
   }
 
   async function setShared(key, value, tries=3){
@@ -526,6 +540,21 @@
       await new Promise(r=>setTimeout(r, 350));
     }
     return false;
+  }
+
+  // 회차의 실제 데이터(지원자 명단/채점/메모 등)를 스프레드시트에서 완전히 지운다.
+  // "회차 목록에서 삭제"와 달리 복구 불가 — 데이터가 계속 쌓여서 시트가 무거워지는 걸
+  // 막기 위해 예전 회차를 더 이상 안 쓸 때 정리하는 용도.
+  async function deleteRoundDataPermanently(roundId){
+    try{
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action:'deletePrefix', prefix: roundKey(roundId, ''), token: SECRET_TOKEN }),
+      });
+      const data = await res.json();
+      return !!data.ok;
+    }catch(e){ return false; }
   }
 
   // Snapshot of everything that would affect what's on screen, so the 3-second background
@@ -549,11 +578,26 @@
   let loadAllGeneration = 0;
   async function loadAll(){
     const myGen = ++loadAllGeneration;
-    const meta = await getSharedBatch(['rounds', 'activeRoundId', 'pins']);
+    // 관리자가 과거 회차를 보고 있을 때만 그 회차 id를 서버에 알려주고, 그 외(면접관,
+    // 또는 관리자가 딱히 고른 회차가 없을 때)는 서버가 자기가 읽은 activeRoundId를
+    // 기준으로 알아서 회차 데이터까지 같이 돌려준다.
+    const viewRoundParam = (state.role === 'admin' && state.viewRoundId) ? state.viewRoundId : '';
+    const values = await bootstrapFetch(viewRoundParam);
     if(myGen !== loadAllGeneration) return; // 더 최신 요청이 이미 시작됨 — 이 결과는 폐기
-    if(meta.rounds.ok) state.rounds = meta.rounds.value || [];
-    if(meta.activeRoundId.ok) state.activeRoundId = meta.activeRoundId.value || null;
-    if(meta.pins.ok && meta.pins.value) state.pins = { ...state.pins, ...meta.pins.value };
+    if(!values){
+      // 완전히 실패했으면 기존 화면을 그대로 유지(빈 값으로 덮어쓰지 않음)
+      state.loaded = true;
+      const snap = takeRenderSnapshot();
+      if(snap !== lastRenderSnapshot){ lastRenderSnapshot = snap; render(); }
+      return;
+    }
+
+    const roundsRes = parseBootstrapValue(values, 'rounds');
+    const activeIdRes = parseBootstrapValue(values, 'activeRoundId');
+    const pinsRes = parseBootstrapValue(values, 'pins');
+    if(roundsRes.ok) state.rounds = roundsRes.value || [];
+    if(activeIdRes.ok) state.activeRoundId = activeIdRes.value || null;
+    if(pinsRes.ok && pinsRes.value) state.pins = { ...state.pins, ...pinsRes.value };
     if(!state.viewRoundId) state.viewRoundId = state.activeRoundId;
 
     const rid = currentRoundId();
@@ -561,23 +605,18 @@
       state.candidates = [];
       state.scores = { A:{}, B:{}, C:{} };
       state.interviewerNames = { A:'', B:'', C:'' };
+      state.adminMemos = {};
       state.revealed = false;
       state.loaded = true;
       const snap = takeRenderSnapshot();
       if(snap !== lastRenderSnapshot){ lastRenderSnapshot = snap; render(); }
       return;
     }
-    const scoreKeys = INTERVIEWERS_ALL.map(l => roundKey(rid, 'scores_' + l));
-    const roundData = await getSharedBatch([
-      roundKey(rid,'candidates'),
-      ...scoreKeys,
-      roundKey(rid,'revealed'),
-      roundKey(rid,'interviewerNames'),
-    ]);
-    if(myGen !== loadAllGeneration) return; // 더 최신 요청이 이미 시작됨 — 이 결과는 폐기
-    const cand = roundData[roundKey(rid,'candidates')];
-    const rev = roundData[roundKey(rid,'revealed')];
-    const names = roundData[roundKey(rid,'interviewerNames')];
+
+    const cand = parseBootstrapValue(values, roundKey(rid,'candidates'));
+    const rev = parseBootstrapValue(values, roundKey(rid,'revealed'));
+    const names = parseBootstrapValue(values, roundKey(rid,'interviewerNames'));
+    const adminMemosRes = parseBootstrapValue(values, roundKey(rid,'adminMemos'));
     // Only apply a key if the read actually succeeded — on failure, keep whatever
     // is already showing instead of wiping it out with an empty fallback.
     if(cand.ok) state.candidates = cand.value || [];
@@ -587,10 +626,11 @@
     // just-made selection before the write had fully landed (the "grade disappears right
     // after picking it" bug). Other interviewers' / admin's own polls are unaffected.
     INTERVIEWERS_ALL.forEach(letter=>{
-      const s = roundData[roundKey(rid, 'scores_' + letter)];
+      const s = parseBootstrapValue(values, roundKey(rid, 'scores_' + letter));
       if(s.ok && state.role !== letter) state.scores[letter] = s.value || {};
     });
     if(rev.ok) state.revealed = !!rev.value;
+    if(adminMemosRes.ok) state.adminMemos = adminMemosRes.value || {};
     if(names.ok && names.value){
       const merged = { A:'', B:'', C:'', D:'', E:'', ...names.value };
       if(INTERVIEWERS_ALL.includes(state.role)){
@@ -620,6 +660,7 @@
     state.candidates = [];
     state.scores = { A:{}, B:{}, C:{}, D:{}, E:{} };
     state.interviewerNames = { A:'', B:'', C:'', D:'', E:'' };
+    state.adminMemos = {};
     state.revealed = false;
     render();
     await Promise.all([
@@ -633,6 +674,7 @@
       setShared(roundKey(id,'scores_E'), {}),
       setShared(roundKey(id,'revealed'), false),
       setShared(roundKey(id,'interviewerNames'), { A:'', B:'', C:'', D:'', E:'' }),
+      setShared(roundKey(id,'adminMemos'), {}),
     ]);
   }
 
@@ -732,6 +774,18 @@
       setShared('rounds', state.rounds),
       setShared('activeRoundId', state.activeRoundId),
     ]);
+
+    // 데이터가 계속 쌓여서 시트가 무거워지는 걸 막고 싶은 관리자를 위한 선택적 2차 단계.
+    // 목록 삭제와 분리해둔 이유: 실수로 실제 데이터까지 한 번에 날리는 일을 막기 위함.
+    const wipe = confirm(
+      `"${round ? round.name : ''}" 회차의 실제 데이터(지원자 명단, 채점 결과, 메모 등)도 스프레드시트에서 완전히 지울까요?\n\n` +
+      `⚠️ 이 작업은 되돌릴 수 없습니다. 테스트 회차이거나, 더 이상 다시 볼 필요가 없는 회차일 때만 선택하세요.\n` +
+      `(취소를 누르면 방금처럼 목록에서만 숨겨지고, 실제 데이터는 그대로 남습니다.)`
+    );
+    if(wipe){
+      const ok = await deleteRoundDataPermanently(id);
+      showToast(ok ? '회차 데이터를 완전히 삭제했습니다.' : '데이터 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
   }
 
   // ---------- excel parsing ----------
@@ -883,6 +937,13 @@
         state.candidates = candidates;
         render();
         const rid = currentRoundId();
+        // 구글 스프레드시트는 셀 하나에 약 5만자까지만 저장할 수 있다. 지원자 수가
+        // 아주 많아지면(경력·학력 정보가 풍부한 지원자가 많을 때) 이 한도에 가까워질 수
+        // 있으므로, 저장을 시도하기 전에 미리 알려준다(저장 자체는 계속 진행됨).
+        const candidatesJson = JSON.stringify(candidates);
+        if(candidatesJson.length > 40000){
+          alert(`지원자 명단 데이터가 꽤 큽니다 (약 ${candidatesJson.length.toLocaleString()}자). 구글 스프레드시트 한 칸에 저장 가능한 용량(약 5만자)에 가까워지고 있어요. 지금은 저장을 계속 진행하지만, 앞으로 지원자가 더 늘어나면 저장이 실패할 수 있습니다 — 그럴 땐 알려주시면 회차를 나누거나 저장 방식을 개선해드릴게요.`);
+        }
         const ok = await setShared(roundKey(rid,'candidates'), candidates);
         if(!ok){
           showToast('저장에 실패했습니다. 네트워크 상태를 확인하고 다시 업로드해주세요.');
@@ -1046,6 +1107,12 @@
     return withIdx.filter(({c}) => (c.name||'').includes(q) || (c.examNo||'').includes(q));
   }
 
+  function filteredForAdminMemo(){
+    if(!state.adminMemoFilter.trim()) return state.candidates;
+    const q = state.adminMemoFilter.trim();
+    return state.candidates.filter(c => (c.name||'').includes(q) || (c.examNo||'').includes(q));
+  }
+
   // 지원자를 배열의 fromIndex 위치에서 toIndex 위치로 옮긴다(수험번호 순서가 아니라
   // 실제 면접 순서 자체를 바꾸는 것 — 순번은 이 배열 순서에서 그대로 파생되므로,
   // 관리자가 한 번 옮기면 면접관 A/B/C 화면에도 즉시 동일하게 반영된다).
@@ -1058,6 +1125,14 @@
     render();
     const rid = currentRoundId();
     await setShared(roundKey(rid, 'candidates'), state.candidates);
+  }
+
+  // 관리자 전용 메모(특이사항, 면접관에게 전해들은 히스토리 등) — 면접관에게는 보이지 않음.
+  async function setAdminMemo(candidateId, text){
+    state.adminMemos[candidateId] = text;
+    render();
+    const rid = currentRoundId();
+    await setShared(roundKey(rid, 'adminMemos'), state.adminMemos);
   }
 
   // ---------- render ----------
@@ -1349,6 +1424,26 @@
         { type:'수정', text:'네트워크가 느릴 때 오래된 응답이 늦게 도착해 최신 상태(예: 방금 전환한 회차)를 덮어써서 화면이 예전 회차로 되돌아가 보이던 문제 방지' },
       ],
     },
+    {
+      label: '업데이트 39 · 등급 선택 UI를 체크리스트 버튼으로 변경',
+      items: [
+        { type:'수정', text:'등급 선택 방식을 드롭다운에서 A/B/C/D/E가 가로로 나열된 체크리스트 버튼으로 변경 — 선택 전에는 빈 사각형, 선택하면 초록 배경 + 흰 체크로 표시. 같은 등급을 다시 누르면 선택이 풀림' },
+      ],
+    },
+    {
+      label: '업데이트 40 · 관리자 전용 메모',
+      items: [
+        { type:'추가', text:'관리자 화면에 "관리자 메모" 카드 추가 — 특이사항이나 면접관에게 전해들은 히스토리 등을 지원자별로 짧게 남길 수 있음. 면접관 화면에는 전혀 노출되지 않는 관리자 전용 메모' },
+      ],
+    },
+    {
+      label: '업데이트 41 · 시작 속도 개선 및 장기 데이터 관리',
+      items: [
+        { type:'수정', text:'앱을 열거나 자동 동기화할 때 "공통 정보 조회 → 회차 데이터 조회" 순서로 서버를 2번 왕복하던 걸, 서버가 필요한 데이터를 한 번에 같이 돌려주는 방식으로 바꿔 왕복 횟수를 절반으로 줄임 (Apps Script에 bootstrap 액션 추가)' },
+        { type:'추가', text:'회차를 "목록에서 삭제"할 때, 그 회차의 실제 데이터(지원자 명단·채점·메모)까지 스프레드시트에서 완전히 지울지 선택할 수 있는 2차 확인 단계 추가 — 오래 쓸수록 시트에 예전 데이터가 계속 쌓여 느려지는 걸 직접 정리할 수 있음' },
+        { type:'추가', text:'지원자 명단이 구글 스프레드시트의 셀당 저장 한도(약 5만자)에 가까워지면 업로드 시 미리 경고하도록 안전장치 추가' },
+      ],
+    },
   ];
 
   // Wrapper around the real render so that whatever text input the user is actively
@@ -1569,6 +1664,55 @@
     return card;
   }
 
+  // 관리자 전용 메모 카드 — 특이사항, 면접관에게 전해들은 히스토리 등을 지원자별로 짧게
+  // 남겨두는 곳. 면접관 화면에는 절대 노출되지 않는다.
+  function renderAdminMemoCard(){
+    const card = el(`
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <p class="card-title">관리자 메모</p>
+            <p class="card-sub">특이사항이나 면접관에게 전해들은 히스토리 등을 지원자별로 짧게 남겨두세요. 관리자만 볼 수 있고, 면접관 화면에는 전혀 노출되지 않습니다.</p>
+          </div>
+          <input type="text" class="filter-input" id="adminMemoFilterInput" placeholder="이름 또는 수험번호로 검색" value="${escapeAttr(state.adminMemoFilter)}" />
+        </div>
+        <div id="adminMemoListWrap"></div>
+      </div>`);
+    attachImeAwareSearchInput(card.querySelector('#adminMemoFilterInput'), (val)=>{
+      state.adminMemoFilter = val; render();
+    });
+
+    const listWrap = card.querySelector('#adminMemoListWrap');
+    const list = filteredForAdminMemo();
+    if(list.length === 0){
+      listWrap.appendChild(el(`<div class="empty-state">검색 결과가 없습니다.</div>`));
+      return card;
+    }
+    const pageKey = `adminMemo_${currentRoundId()}`;
+    const shownCount = getVisibleCount(pageKey, list.length);
+    const table = el(`<table class="responsive-table">
+      <thead><tr><th>수험번호</th><th>이름</th><th>메모</th></tr></thead>
+      <tbody></tbody>
+    </table>`);
+    const tbody = table.querySelector('tbody');
+    list.slice(0, shownCount).forEach(c=>{
+      const tr = el(`<tr>
+        <td class="mono-cell" data-label="수험번호">${escapeHtml(c.examNo||'-')}</td>
+        <td class="name-cell" data-label="이름">${escapeHtml(c.name)}</td>
+        <td data-label="메모"></td>
+      </tr>`);
+      const memoTd = tr.children[2];
+      const memoInput = el(`<textarea id="adminMemoInput_${c.id}" class="memo-input" style="width:100%;min-width:220px;" placeholder="특이사항, 히스토리 등 (관리자만 보임)" rows="1">${escapeHtml(state.adminMemos[c.id]||'')}</textarea>`);
+      memoInput.addEventListener('change', ()=> setAdminMemo(c.id, memoInput.value));
+      memoTd.appendChild(memoInput);
+      tbody.appendChild(tr);
+    });
+    listWrap.appendChild(table);
+    const moreBtn = buildShowMoreBtn(pageKey, shownCount, list.length);
+    if(moreBtn) listWrap.appendChild(moreBtn);
+    return card;
+  }
+
   function renderPinSettingsCard(){
     const card = el(`
       <div class="card">
@@ -1770,6 +1914,7 @@
     if(isActive){
       wrap.appendChild(renderReorderCard());
     }
+    wrap.appendChild(renderAdminMemoCard());
 
     // progress card
     const progressCard = el(`
@@ -2274,14 +2419,24 @@
     });
   }
 
+  // 등급을 드롭다운 대신 가로로 늘어선 체크박스형 버튼으로 선택하게 함.
+  // 선택 안 됨: 빈 사각형 테두리 / 선택됨: 초록 배경 + 흰색 체크. 같은 등급을 다시
+  // 누르면 선택이 풀려서 "-"(빈칸)로 되돌아간다.
   function buildGradeSelect(current, onChange){
     const grades = getGradeScale(state.activeRoundId).grades;
-    const sel = el(`<select class="grade-select">
-      <option value="">-</option>
-      ${grades.map(g=>`<option value="${g}" ${g===current?'selected':''}>${g}</option>`).join('')}
-    </select>`);
-    sel.addEventListener('change', (e)=>{ onChange(e.target.value); });
-    return sel;
+    const row = el(`<div class="grade-chip-row"></div>`);
+    grades.forEach(g=>{
+      const chip = el(`
+        <button type="button" class="grade-chip ${g===current?'selected':''}" data-grade="${escapeAttr(g)}">
+          <span class="grade-chip-box">${g===current?'✓':''}</span>
+          <span class="grade-chip-label">${escapeHtml(g)}</span>
+        </button>`);
+      chip.addEventListener('click', ()=>{
+        onChange(g === current ? '' : g);
+      });
+      row.appendChild(chip);
+    });
+    return row;
   }
 
   function escapeHtml(s){
