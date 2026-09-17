@@ -250,6 +250,13 @@
     font-family:var(--sans);font-weight:700;font-size:13px;color:var(--muted);white-space:nowrap;
   }
 
+  .history-row{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 10px;}
+  .history-tag{
+    display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+    border-radius:8px;padding:5px 10px;
+  }
+  .history-tag .rank-num{font-family:var(--mono);font-weight:800;}
+
   .cand-body{padding:0 20px 16px;}
   .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
   .tag{
@@ -446,6 +453,8 @@
     reorderFilter: '', // 관리자 전용 "지원자 순서 관리" 검색창 (면접관용 state.filter와는 별개)
     adminMemos: {}, // 회차별 관리자 전용 메모 (면접관에게는 보이지 않음) — { candidateId: '메모' }
     adminMemoFilter: '', // 관리자 메모 카드 검색창
+    historyRanks: {}, // 회차별 "이전 단계 등수" — { candidateId: { 단계이름: '등수 텍스트' } }
+    historyRankFilter: '', // 이전 단계 등수 입력 카드 검색창
     visibleCounts: {}, // 목록별로 지금까지 "더 보기"로 펼친 개수 (지원자 많을 때 초기 렌더링 부담 완화)
     loaded: false,
     saving: false,
@@ -477,6 +486,11 @@
   function getScoringMode(roundId){
     const r = state.rounds.find(x => x.id === roundId);
     return (r && r.scoringMode === 'single') ? 'single' : 'dual';
+  }
+  // 이 회차에서 관리자가 정해둔 "이전 단계" 이름들 (예: ['서류','1차면접']). 없으면 빈 배열.
+  function getHistoryStages(roundId){
+    const r = state.rounds.find(x => x.id === roundId);
+    return (r && Array.isArray(r.historyStages)) ? r.historyStages : [];
   }
 
   // ---------- storage helpers ----------
@@ -606,6 +620,7 @@
       state.scores = { A:{}, B:{}, C:{} };
       state.interviewerNames = { A:'', B:'', C:'' };
       state.adminMemos = {};
+      state.historyRanks = {};
       state.revealed = false;
       state.loaded = true;
       const snap = takeRenderSnapshot();
@@ -617,6 +632,7 @@
     const rev = parseBootstrapValue(values, roundKey(rid,'revealed'));
     const names = parseBootstrapValue(values, roundKey(rid,'interviewerNames'));
     const adminMemosRes = parseBootstrapValue(values, roundKey(rid,'adminMemos'));
+    const historyRanksRes = parseBootstrapValue(values, roundKey(rid,'historyRanks'));
     // Only apply a key if the read actually succeeded — on failure, keep whatever
     // is already showing instead of wiping it out with an empty fallback.
     if(cand.ok) state.candidates = cand.value || [];
@@ -631,6 +647,7 @@
     });
     if(rev.ok) state.revealed = !!rev.value;
     if(adminMemosRes.ok) state.adminMemos = adminMemosRes.value || {};
+    if(historyRanksRes.ok) state.historyRanks = historyRanksRes.value || {};
     if(names.ok && names.value){
       const merged = { A:'', B:'', C:'', D:'', E:'', ...names.value };
       if(INTERVIEWERS_ALL.includes(state.role)){
@@ -647,13 +664,14 @@
   }
 
   // ---------- round management ----------
-  async function doCreateRound(name, interviewerCount, scoringMode, gradeScale){
+  async function doCreateRound(name, interviewerCount, scoringMode, gradeScale, historyStagesRaw){
     const finalName = (name && name.trim()) || `면접 회차 ${state.rounds.length + 1}`;
     const safeCount = (interviewerCount >= 2 && interviewerCount <= 5) ? interviewerCount : 3;
     const safeMode = scoringMode === 'single' ? 'single' : 'dual';
     const safeGradeScale = gradeScale === 'flat' ? 'flat' : 'plus';
+    const historyStages = String(historyStagesRaw||'').split(',').map(s=>s.trim()).filter(Boolean);
     const id = 'r' + Date.now();
-    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount: safeCount, scoringMode: safeMode, gradeScale: safeGradeScale };
+    const round = { id, name: finalName, createdAt: new Date().toISOString(), interviewerCount: safeCount, scoringMode: safeMode, gradeScale: safeGradeScale, historyStages };
     state.rounds = [...state.rounds, round];
     state.activeRoundId = id;
     state.viewRoundId = id;
@@ -661,6 +679,7 @@
     state.scores = { A:{}, B:{}, C:{}, D:{}, E:{} };
     state.interviewerNames = { A:'', B:'', C:'', D:'', E:'' };
     state.adminMemos = {};
+    state.historyRanks = {};
     state.revealed = false;
     render();
     await Promise.all([
@@ -675,6 +694,7 @@
       setShared(roundKey(id,'revealed'), false),
       setShared(roundKey(id,'interviewerNames'), { A:'', B:'', C:'', D:'', E:'' }),
       setShared(roundKey(id,'adminMemos'), {}),
+      setShared(roundKey(id,'historyRanks'), {}),
     ]);
   }
 
@@ -713,6 +733,10 @@
               <option value="flat">A / B / C / D / E 등급 (100/90/80/70/0점)</option>
             </select>
           </div>
+          <div>
+            <label style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">이전 단계 이름 (선택, 쉼표로 구분)</label>
+            <input type="text" id="newRoundHistoryStages" class="filter-input" style="width:100%;" placeholder="예: 서류, 1차면접 (없으면 비워두세요)" />
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:16px;">
           <button class="btn" id="newRoundCancelBtn">취소</button>
@@ -727,8 +751,9 @@
       const count = parseInt(wrap.querySelector('#newRoundCount').value, 10);
       const mode = wrap.querySelector('#newRoundMode').value;
       const gradeScale = wrap.querySelector('#newRoundGradeScale').value;
+      const historyStagesRaw = wrap.querySelector('#newRoundHistoryStages').value;
       state.showNewRoundModal = false;
-      doCreateRound(name, count, mode, gradeScale);
+      doCreateRound(name, count, mode, gradeScale, historyStagesRaw);
     });
     setTimeout(()=> { const inp = wrap.querySelector('#newRoundName'); if(inp) inp.focus(); }, 0);
     return wrap;
@@ -1135,6 +1160,21 @@
     await setShared(roundKey(rid, 'adminMemos'), state.adminMemos);
   }
 
+  // 이전 단계(서류/1차면접 등) 등수 — 회차마다 정해둔 historyStages 이름 기준으로 저장.
+  async function setHistoryRank(candidateId, stageName, text){
+    if(!state.historyRanks[candidateId]) state.historyRanks[candidateId] = {};
+    state.historyRanks[candidateId][stageName] = text;
+    render();
+    const rid = currentRoundId();
+    await setShared(roundKey(rid, 'historyRanks'), state.historyRanks);
+  }
+
+  function filteredForHistoryRank(){
+    if(!state.historyRankFilter.trim()) return state.candidates;
+    const q = state.historyRankFilter.trim();
+    return state.candidates.filter(c => (c.name||'').includes(q) || (c.examNo||'').includes(q));
+  }
+
   // ---------- render ----------
   function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
 
@@ -1444,6 +1484,14 @@
         { type:'추가', text:'지원자 명단이 구글 스프레드시트의 셀당 저장 한도(약 5만자)에 가까워지면 업로드 시 미리 경고하도록 안전장치 추가' },
       ],
     },
+    {
+      label: '업데이트 42 · 이전 단계(서류/1차면접 등) 등수 표시',
+      items: [
+        { type:'추가', text:'회차 시작 시 "이전 단계 이름"을 자유롭게 입력 가능 (예: "서류, 1차면접" — 직군/단계마다 다르게 설정 가능)' },
+        { type:'추가', text:'관리자 화면에 "이전 단계 등수 입력" 카드 추가 — 지원자별로 각 단계의 등수를 자유 텍스트로 입력(예: "3위/32명")' },
+        { type:'수정', text:'입력한 이전 단계 등수가 지원자 카드 상단에 단계별 색깔 태그로 표시됨 (지원자 평가 · 나의 실시간 순위 · 최종 순위 모두 동일하게 반영)' },
+      ],
+    },
   ];
 
   // Wrapper around the real render so that whatever text input the user is actively
@@ -1713,6 +1761,62 @@
     return card;
   }
 
+  // 이 회차에 "이전 단계 이름"이 설정돼 있을 때만 나타나는, 서류/1차면접 등 이전 단계
+  // 등수를 지원자별로 입력하는 카드. 여기서 입력하면 지원자 카드에 태그로 표시된다.
+  function renderHistoryRankCard(){
+    const stages = getHistoryStages(currentRoundId());
+    if(stages.length === 0) return null;
+
+    const card = el(`
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <p class="card-title">이전 단계 등수 입력</p>
+            <p class="card-sub">이번 회차의 이전 단계: <b>${stages.map(s=>escapeHtml(s)).join(' → ')}</b>. 지원자별로 각 단계의 등수를 자유롭게 입력하세요 (예: "3위/32명"). 지원자 카드에 태그로 표시됩니다.</p>
+          </div>
+          <input type="text" class="filter-input" id="historyRankFilterInput" placeholder="이름 또는 수험번호로 검색" value="${escapeAttr(state.historyRankFilter)}" />
+        </div>
+        <div id="historyRankListWrap"></div>
+      </div>`);
+    attachImeAwareSearchInput(card.querySelector('#historyRankFilterInput'), (val)=>{
+      state.historyRankFilter = val; render();
+    });
+
+    const listWrap = card.querySelector('#historyRankListWrap');
+    const list = filteredForHistoryRank();
+    if(list.length === 0){
+      listWrap.appendChild(el(`<div class="empty-state">검색 결과가 없습니다.</div>`));
+      return card;
+    }
+    const pageKey = `historyRank_${currentRoundId()}`;
+    const shownCount = getVisibleCount(pageKey, list.length);
+    const table = el(`<table class="responsive-table">
+      <thead><tr><th>수험번호</th><th>이름</th>${stages.map(s=>`<th>${escapeHtml(s)} 등수</th>`).join('')}</tr></thead>
+      <tbody></tbody>
+    </table>`);
+    const tbody = table.querySelector('tbody');
+    list.slice(0, shownCount).forEach(c=>{
+      const tr = el(`<tr>
+        <td class="mono-cell" data-label="수험번호">${escapeHtml(c.examNo||'-')}</td>
+        <td class="name-cell" data-label="이름">${escapeHtml(c.name)}</td>
+        ${stages.map(()=>'<td></td>').join('')}
+      </tr>`);
+      stages.forEach((stage, i)=>{
+        const td = tr.children[2 + i];
+        td.setAttribute('data-label', `${stage} 등수`);
+        const current = (state.historyRanks[c.id] && state.historyRanks[c.id][stage]) || '';
+        const input = el(`<input type="text" class="filter-input" style="width:100%;min-width:120px;" placeholder="예: 3위/32명" value="${escapeAttr(current)}" />`);
+        input.addEventListener('change', ()=> setHistoryRank(c.id, stage, input.value));
+        td.appendChild(input);
+      });
+      tbody.appendChild(tr);
+    });
+    listWrap.appendChild(table);
+    const moreBtn = buildShowMoreBtn(pageKey, shownCount, list.length);
+    if(moreBtn) listWrap.appendChild(moreBtn);
+    return card;
+  }
+
   function renderPinSettingsCard(){
     const card = el(`
       <div class="card">
@@ -1802,7 +1906,8 @@
         opt.value = r.id;
         const modeTag = r.scoringMode === 'single' ? ' · 단일평가' : '';
         const scaleTag = r.gradeScale === 'flat' ? ' · A~E등급' : '';
-        opt.textContent = r.name + ` · 면접관 ${r.interviewerCount||3}명${modeTag}${scaleTag}` + (r.id===activeId ? ' (진행중)' : '');
+        const historyTag = (r.historyStages && r.historyStages.length) ? ` · 이전단계 ${r.historyStages.length}개` : '';
+        opt.textContent = r.name + ` · 면접관 ${r.interviewerCount||3}명${modeTag}${scaleTag}${historyTag}` + (r.id===activeId ? ' (진행중)' : '');
         if(r.id === viewId) opt.selected = true;
         select.appendChild(opt);
       });
@@ -1915,6 +2020,8 @@
       wrap.appendChild(renderReorderCard());
     }
     wrap.appendChild(renderAdminMemoCard());
+    const historyRankCard = renderHistoryRankCard();
+    if(historyRankCard) wrap.appendChild(historyRankCard);
 
     // progress card
     const progressCard = el(`
@@ -2122,6 +2229,7 @@
           <div class="cand-vitals">${escapeHtml(c.dob||'-')} · ${escapeHtml(c.gender||'-')}${c.age ? ' · '+escapeHtml(c.age) : ''}</div>
         </div>
       </div>
+      ${renderHistoryTagsRow(c)}
       <div class="cand-body">
         <div class="tag-row">${renderInfoTagsRow(c)}</div>
         <div class="career-row">${renderCareerChips(c)}</div>
@@ -2358,6 +2466,7 @@
                 <div class="cand-vitals">${escapeHtml(c.dob||'-')} · ${escapeHtml(c.gender||'-')}${c.age ? ' · '+escapeHtml(c.age) : ''}</div>
               </div>
             </div>
+            ${renderHistoryTagsRow(c)}
             <div class="cand-body">
               <div class="tag-row">${renderInfoTagsRow(c)}</div>
               <div class="career-row">${renderCareerChips(c)}</div>
@@ -2485,6 +2594,28 @@
 
   // 노션처럼, 라벨을 작은 색깔 사각형 태그로 값 앞에 붙여서 표시.
   // 카드형 지원자 UI: 학사/석사/박사 정보를 알약 모양 태그로 압축 표시.
+  // 이전 단계(서류/1차면접 등) 등수를 지원자 카드 상단에 태그로 표시.
+  const HISTORY_TAG_COLORS = [
+    { bg:'#EAF2FE', fg:'#2F5FA8' },
+    { bg:'#F3EDFC', fg:'#6B4FA8' },
+    { bg:'#FDEDEA', fg:'#B0432E' },
+    { bg:'#EAFBF1', fg:'#1F5A4C' },
+    { bg:'#FFF6E0', fg:'#8A5316' },
+  ];
+  function renderHistoryTagsRow(c){
+    const stages = getHistoryStages(currentRoundId());
+    if(stages.length === 0) return '';
+    const ranks = state.historyRanks[c.id] || {};
+    const tags = stages.map((stage, i)=>{
+      const val = ranks[stage];
+      if(isBlankValue(val)) return '';
+      const color = HISTORY_TAG_COLORS[i % HISTORY_TAG_COLORS.length];
+      return `<span class="history-tag" style="background:${color.bg};color:${color.fg};">${escapeHtml(stage)} <span class="rank-num">${escapeHtml(val)}</span></span>`;
+    }).filter(Boolean).join('');
+    if(!tags) return '';
+    return `<div class="history-row">${tags}</div>`;
+  }
+
   function renderInfoTagsRow(c){
     const tags = [];
     const tag = (text, color) => `<span class="tag"><span class="tag-dot" style="background:${color};"></span>${escapeHtml(text)}</span>`;
